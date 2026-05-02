@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Volta — Manual Backtester</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; }
+  .wrap { width: 100vw; height: 100vh; position: relative; overflow: hidden; color: var(--text-primary, #fff); background: var(--bg-base, #04010e); transition: background 0.3s; }
+
+  /* ── THEME VARIABLES ── */
+  :root {
+    --bg-base: #04010e;
+    --bg-topbar: rgba(8,4,28,0.92);
+    --bg-statbar: rgba(8,4,28,0.75);
+    --bg-panel: rgba(8,4,28,0.78);
+    --bg-chart: rgba(6,3,20,0.88);
+    --bg-dbox: rgba(255,255,255,0.04);
+    --border-main: rgba(180,100,255,0.3);
+    --border-sep: rgba(180,100,255,0.35);
+    --border-panel: rgba(180,100,255,0.18);
+    --border-statbar: rgba(180,100,255,0.15);
+    --border-chart: rgba(150,80,255,0.22);
+    --border-dbox: rgba(180,100,255,0.15);
+    --border-dbox-active: rgba(168,85,247,0.7);
+    --bg-dbox-active: rgba(124,58,237,0.12);
+    --shadow-dbox-active: 0 0 12px rgba(124,58,237,0.2);
+    --accent: #a855f7;
+    --accent-soft: rgba(168,85,247,0.08);
+    --accent-chip-bg: rgba(124,58,237,0.2);
+    --accent-chip-border: rgba(180,100,255,0.45);
+    --accent-lbl: #c4b5fd;
+    --accent-sl: #d8b4fe;
+    --accent-panel-lbl: #d8b4fe;
+    --accent-ml: #c4b5fd;
+    --accent-sh: #a78bfa;
+    --accent-border-panel: rgba(180,100,255,0.22);
+    --accent-wmark: linear-gradient(135deg,#e879f9,#a855f7,#818cf8,#c084fc);
+    --chart-line: #a855f7;
+    --chart-fill: rgba(168,85,247,0.1);
+    --dayend-dot: #38bdf8;
+    --btn-bg: rgba(255,255,255,0.07);
+    --btn-border: rgba(200,150,255,0.25);
+    --inp-bg: rgba(255,255,255,0.07);
+    --inp-border: rgba(180,100,255,0.3);
+    --inp-border-focus: rgba(200,150,255,0.7);
+    --text-primary: #fff;
+    --text-muted: #444;
+    --galaxy-on: 1;
+  }
+
+  /* ── PROFESSIONAL BLUE THEME ── */
+  [data-theme="pro"] {
+    --bg-base: #080c14;
+    --bg-topbar: #0d1117;
+    --bg-statbar: #0a0f1a;
+    --bg-panel: #0a0f1a;
+    --bg-chart: #080c14;
+    --bg-dbox: #0d1117;
+    --border-main: #1c2333;
+    --border-sep: #1c2333;
+    --border-panel: #141c2e;
+    --border-statbar: #141c2e;
+    --border-chart: #141c2e;
+    --border-dbox: #1a2235;
+    --border-dbox-active: #1e4d8c;
+    --bg-dbox-active: #0d1b2e;
+    --shadow-dbox-active: 0 0 0 1px #0d3268 inset;
+    --accent: #3b82f6;
+    --accent-soft: rgba(59,130,246,0.08);
+    --accent-chip-bg: #0d1824;
+    --accent-chip-border: #1e3a5f;
+    --accent-lbl: #3b82f6;
+    --accent-sl: #3b5268;
+    --accent-panel-lbl: #3b5268;
+    --accent-ml: #2e4055;
+    --accent-sh: #253447;
+    --accent-border-panel: #131c2e;
+    --accent-wmark: linear-gradient(135deg,#93c5fd,#3b82f6,#1d4ed8);
+    --chart-line: #3b82f6;
+    --chart-fill: rgba(59,130,246,0.1);
+    --dayend-dot: #60a5fa;
+    --btn-bg: transparent;
+    --btn-border: #2a3347;
+    --inp-bg: #0d1117;
+    --inp-border: #1c2333;
+    --inp-border-focus: #3b82f6;
+    --text-primary: #e2eaf8;
+    --text-muted: #2e4055;
+    --galaxy-on: 0;
+  }
+
+  /* ── LAMBORGHINI THEME ── */
+  [data-theme="lambo"] {
+    --bg-base: #0a0800;
+    --bg-topbar: #0f0c00;
+    --bg-statbar: #0c0900;
+    --bg-panel: #0c0900;
+    --bg-chart: #080600;
+    --bg-dbox: #100d00;
+    --border-main: #2a2200;
+    --border-sep: #2a2200;
+    --border-panel: #1e1900;
+    --border-statbar: #1a1500;
+    --border-chart: #221c00;
+    --border-dbox: #1e1900;
+    --border-dbox-active: #c9a000;
+    --bg-dbox-active: #1a1400;
+    --shadow-dbox-active: 0 0 14px rgba(201,160,0,0.25);
+    --accent: #f5c400;
+    --accent-soft: rgba(245,196,0,0.08);
+    --accent-chip-bg: #1a1400;
+    --accent-chip-border: #4a3a00;
+    --accent-lbl: #c9a000;
+    --accent-sl: #5a4800;
+    --accent-panel-lbl: #5a4800;
+    --accent-ml: #443800;
+    --accent-sh: #352c00;
+    --accent-border-panel: #1e1900;
+    --accent-wmark: linear-gradient(135deg,#ffd700,#f5c400,#c9a000,#8b6f00);
+    --chart-line: #f5c400;
+    --chart-fill: rgba(245,196,0,0.08);
+    --dayend-dot: #f5c400;
+    --btn-bg: rgba(245,196,0,0.05);
+    --btn-border: #2a2200;
+    --inp-bg: #0f0c00;
+    --inp-border: #2a2200;
+    --inp-border-focus: #f5c400;
+    --text-primary: #f0e8c8;
+    --text-muted: #443800;
+    --galaxy-on: 0;
+  }
+
+  /* ── DARK STEALTH THEME ── */
+  [data-theme="dark"] {
+    --bg-base: #080808;
+    --bg-topbar: #111111;
+    --bg-statbar: #0d0d0d;
+    --bg-panel: #0d0d0d;
+    --bg-chart: #0a0a0a;
+    --bg-dbox: #111111;
+    --border-main: #333333;
+    --border-sep: #444444;
+    --border-panel: #2a2a2a;
+    --border-statbar: #2a2a2a;
+    --border-chart: #2e2e2e;
+    --border-dbox: #383838;
+    --border-dbox-active: #888888;
+    --bg-dbox-active: #1e1e1e;
+    --shadow-dbox-active: 0 0 0 1px #666 inset;
+    --accent: #e0e0e0;
+    --accent-soft: rgba(255,255,255,0.06);
+    --accent-chip-bg: #1a1a1a;
+    --accent-chip-border: #444444;
+    --accent-lbl: #aaaaaa;
+    --accent-sl: #888888;
+    --accent-panel-lbl: #aaaaaa;
+    --accent-ml: #888888;
+    --accent-sh: #666666;
+    --accent-border-panel: #2a2a2a;
+    --accent-wmark: linear-gradient(135deg,#fff,#ccc,#999);
+    --chart-line: #cccccc;
+    --chart-fill: rgba(200,200,200,0.05);
+    --dayend-dot: #aaaaaa;
+    --btn-bg: rgba(255,255,255,0.06);
+    --btn-border: #3a3a3a;
+    --inp-bg: #111111;
+    --inp-border: #333333;
+    --inp-border-focus: #888888;
+    --text-primary: #ffffff;
+    --text-muted: #666666;
+    --galaxy-on: 0;
+  }
+
+  /* ── ICY LIGHT THEME ── */
+  [data-theme="light"] {
+    --bg-base: #f0f4f8;
+    --bg-topbar: #ffffff;
+    --bg-statbar: #f8fafc;
+    --bg-panel: #ffffff;
+    --bg-chart: #ffffff;
+    --bg-dbox: #f8fafc;
+    --border-main: #e2e8f0;
+    --border-sep: #e2e8f0;
+    --border-panel: #e2e8f0;
+    --border-statbar: #e8edf4;
+    --border-chart: #e2e8f0;
+    --border-dbox: #e2e8f0;
+    --border-dbox-active: #93c5fd;
+    --bg-dbox-active: #eff6ff;
+    --shadow-dbox-active: 0 0 10px rgba(59,130,246,0.15);
+    --accent: #2563eb;
+    --accent-soft: rgba(59,130,246,0.06);
+    --accent-chip-bg: #eff6ff;
+    --accent-chip-border: #bfdbfe;
+    --accent-lbl: #1d4ed8;
+    --accent-sl: #000000;
+    --accent-panel-lbl: #000000;
+    --accent-ml: #000000;
+    --accent-sh: #1e3a8a;
+    --accent-border-panel: #e2e8f0;
+    --accent-wmark: linear-gradient(135deg,#1d4ed8,#1e40af,#1e3a8a);
+    --chart-line: #2563eb;
+    --chart-fill: rgba(37,99,235,0.08);
+    --dayend-dot: #3b82f6;
+    --btn-bg: #f1f5f9;
+    --btn-border: #cbd5e1;
+    --inp-bg: #f8fafc;
+    --inp-border: #e2e8f0;
+    --inp-border-focus: #3b82f6;
+    --text-primary: #000000;
+    --text-muted: #475569;
+    --bg-page-alt: #f8fafc;
+    --border-page-alt: #e2e8f0;
+    --galaxy-on: 0;
+  }
+  /* ── LIGHT THEME GLOBAL TEXT OVERRIDES — force black on everything ── */
+  [data-theme="light"] .sv,
+  [data-theme="light"] .sl,
+  [data-theme="light"] .mv,
+  [data-theme="light"] .ml,
+  [data-theme="light"] .sh,
+  [data-theme="light"] .ptit,
+  [data-theme="light"] .wn,
+  [data-theme="light"] .wl,
+  [data-theme="light"] .dpnl,
+  [data-theme="light"] .dmeta,
+  [data-theme="light"] .dlbl,
+  [data-theme="light"] .wpnl,
+  [data-theme="light"] .wsub,
+  [data-theme="light"] .wlbl,
+  [data-theme="light"] .li,
+  [data-theme="light"] .name-inp,
+  [data-theme="light"] .pol,
+  [data-theme="light"] .pov,
+  [data-theme="light"] .bal-val,
+  [data-theme="light"] .bal-lbl,
+  [data-theme="light"] .ol,
+  [data-theme="light"] .ov,
+  [data-theme="light"] .wcdl,
+  [data-theme="light"] .wcdm,
+  [data-theme="light"] .wcdm-white,
+  [data-theme="light"] .hcl,
+  [data-theme="light"] .hcv,
+  [data-theme="light"] .reset-all-btn,
+  [data-theme="light"] .scard-name,
+  [data-theme="light"] .scard-meta { color: #000 !important; }
+
+  [data-theme="light"] .sv.pos { color: #15803d !important; }
+  [data-theme="light"] .sv.neg { color: #b91c1c !important; }
+  [data-theme="light"] .mv.pos { color: #15803d !important; }
+  [data-theme="light"] .mv.neg { color: #b91c1c !important; }
+  [data-theme="light"] .mv { color: #000 !important; }
+  [data-theme="light"] #settingsBtn { background: #1e40af !important; color: #fff !important; border-color: #1e40af !important; }
+  [data-theme="light"] .pov.pos { color: #15803d !important; }
+  [data-theme="light"] .pov.neg { color: #b91c1c !important; }
+  [data-theme="light"] .dpnl.pos { color: #15803d !important; }
+  [data-theme="light"] .dpnl.neg { color: #b91c1c !important; }
+  [data-theme="light"] .wcdp.pos { color: #15803d !important; }
+  [data-theme="light"] .wcdp.neg { color: #b91c1c !important; }
+  [data-theme="light"] .btn { color: #000 !important; }
+  [data-theme="light"] .btn.green { color: #fff !important; }
+  [data-theme="light"] .btn.red { color: #fff !important; }
+  [data-theme="light"] .btn.gray { color: #fff !important; }
+  [data-theme="light"] .btn.endday { color: #fff !important; }
+  [data-theme="light"] .btn.endweek { color: #fff !important; }
+  [data-theme="light"] .inp { color: #000 !important; background: #fff !important; }
+  [data-theme="light"] .inp::placeholder { color: #94a3b8 !important; }
+  [data-theme="light"] .name-inp::placeholder { color: #94a3b8 !important; }
+  [data-theme="light"] .reset-all-btn { background: #000 !important; color: #fff !important; border-color: #000 !important; }
+  [data-theme="dark"] #gc { opacity: 0 !important; }
+  [data-theme="light"] #gc { opacity: 0 !important; }
+  #gc { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; transition: opacity 0.4s; }
+  .ui { position: relative; z-index: 1; width: 100%; height: 100%; display: flex; flex-direction: column; }
+  .page { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  .page.hidden { display: none; }
+
+  .topbar { background: var(--bg-topbar); border-bottom: 1px solid var(--border-main); padding: 8px 14px; display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; overflow-x: auto; overflow-y: visible; flex-shrink: 0; transition: background 0.3s, border-color 0.3s; }
+  .topbar::-webkit-scrollbar { display: none; }
+  .topbar { scrollbar-width: none; }
+  .sep { width: 1px; height: 24px; background: var(--border-sep); flex-shrink: 0; margin: 0 2px; }
+  .btn { padding: 6px 13px; border-radius: 7px; border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--text-primary); cursor: pointer; font-size: 16px; font-family: 'Inter',sans-serif; font-weight: 500; white-space: nowrap; transition: all 0.15s; }
+  .btn:hover { background: rgba(255,255,255,0.14); }
+  .btn.green { background: rgba(22,163,74,0.85); border-color: #16a34a; font-weight: 600; color: #fff; }
+  .btn.green:hover { background: rgba(21,128,61,0.9); }
+  .btn.red { background: rgba(220,38,38,0.85); border-color: #dc2626; font-weight: 600; color: #fff; }
+  .btn.red:hover { background: rgba(185,28,28,0.9); }
+  .btn.gray { background: rgba(107,114,128,0.85); border-color: #6b7280; font-weight: 600; color: #fff; }
+  .btn.gray:hover { background: rgba(75,85,99,0.9); }
+  .btn.hist { background: rgba(124,58,237,0.4); border-color: rgba(180,100,255,0.5); }
+  .btn.endday { background: rgba(6,78,59,0.85); border-color: #065f46; font-weight: 700; color: #6ee7b7; }
+  .btn.endweek { background: rgba(6,78,59,0.85); border-color: #065f46; font-weight: 700; color: #6ee7b7; }
+
+  /* Settings dropdown — fixed to viewport so it escapes topbar overflow clip */
+  .settings-wrap { flex-shrink: 0; }
+  .settings-btn { padding: 6px 11px; border-radius: 7px; border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--text-primary); cursor: pointer; font-size: 15px; display: flex; align-items: center; gap: 5px; font-family: 'Inter',sans-serif; }
+  .settings-btn:hover { background: rgba(255,255,255,0.1); }
+  .settings-drop {
+    position: fixed; top: 56px; right: 14px;
+    width: 310px;
+    background: #0d1117; border: 1px solid #252e40;
+    border-radius: 12px; z-index: 99999;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.04);
+    display: none;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+  .settings-drop.open { display: block; }
+  .sd-header { padding: 12px 16px; font-size: 12px; font-weight: 700; color: #e2eaf8; letter-spacing: 0.06em; border-bottom: 1px solid #1c2a3a; display: flex; justify-content: space-between; align-items: center; background: #0a0f1a; border-radius: 12px 12px 0 0; }
+  .sd-close { cursor: pointer; color: #3b5268; font-size: 20px; line-height: 1; padding: 0 2px; }
+  .sd-close:hover { color: #e2eaf8; }
+  .sd-section { padding: 12px 16px; }
+  .sd-section-lbl { font-size: 10px; color: #3b5268; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 10px; }
+  .theme-opt { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; margin-bottom: 6px; }
+  .theme-opt:last-child { margin-bottom: 0; }
+  .theme-opt:hover { background: rgba(255,255,255,0.05); border-color: #2a3347; }
+  .theme-opt.selected { border-color: #3b82f6; background: rgba(59,130,246,0.08); }
+  .theme-swatch { width: 44px; height: 28px; border-radius: 6px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.12); }
+  .theme-info { flex: 1; }
+  .theme-name { font-size: 14px; font-weight: 600; color: #e2eaf8; }
+  .theme-desc { font-size: 11px; color: #3b5268; margin-top: 2px; }
+  .theme-check { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #2a3347; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .theme-opt.selected .theme-check { border-color: #3b82f6; background: #3b82f6; }
+  .theme-check::after { content: ''; width: 7px; height: 7px; background: #fff; border-radius: 50%; opacity: 0; }
+  .theme-opt.selected .theme-check::after { opacity: 1; }
+  /* Saved tests page */
+  .spage { background: var(--bg-base, #000); }
+  .stop { background: var(--bg-topbar, #000); border-bottom: 1px solid var(--border-main, rgba(180,100,255,0.25)); padding: 8px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .sinner { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 14px; gap: 12px; background: var(--bg-base, #000); }
+  .slist { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+  .scard { background: var(--bg-dbox,#0a0520); border: 1px solid var(--border-dbox,rgba(180,100,255,0.25)); border-radius: 10px; overflow: hidden; display: flex; align-items: stretch; }
+  .scard-main { flex: 1; padding: 14px 16px; cursor: pointer; transition: background 0.15s; }
+  .scard-main:hover { background: var(--accent-soft,rgba(124,58,237,0.1)); }
+  .scard-name { font-size: 16px; font-weight: 700; color: var(--text-primary,#e0e0e0); margin-bottom: 4px; }
+  .scard-meta { font-size: 12px; color: var(--text-muted,#555); }
+  .scard-pnl { font-size: 22px; font-weight: 800; }
+  .scard-right { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding: 14px 14px 14px 0; gap: 8px; }
+  .scard-del { background: transparent; border: 1px solid rgba(220,38,38,0.3); color: #f87171; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .scard-del:hover { background: rgba(220,38,38,0.15); }
+  .sempty { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--text-muted,#333); font-style: italic; }
+
+  .bal-chip { display: flex; align-items: center; gap: 6px; background: var(--accent-chip-bg); border: 1px solid var(--accent-chip-border); border-radius: 7px; padding: 4px 10px; flex-shrink: 0; transition: all 0.3s; }
+  .bal-lbl { font-size: 13px; color: var(--accent-lbl); text-transform: uppercase; letter-spacing: 0.06em; }
+  .bal-val { font-size: 17px; font-weight: 700; color: var(--text-primary); }
+  .bal-inp { background: transparent; border: none; outline: none; color: var(--text-primary); font-size: 17px; font-weight: 700; font-family: 'Inter', sans-serif; width: 130px; min-width: 0; }
+
+  .inp { background: var(--inp-bg); border: 1px solid var(--inp-border); border-radius: 7px; padding: 6px 9px; color: var(--text-primary); font-size: 16px; font-family: 'Inter',sans-serif; width: 105px; outline: none; flex-shrink: 0; }
+  .inp:focus { border-color: var(--inp-border-focus); }
+  .inp::placeholder { color: #555; }
+  .name-inp { background: transparent; border: none; outline: none; color: var(--text-primary); font-size: 16px; font-style: italic; flex: 1; min-width: 80px; font-family: 'Inter',sans-serif; }
+  .name-inp::placeholder { color: var(--text-muted); }
+
+  .sbar { background: var(--bg-statbar); border-bottom: 1px solid var(--border-statbar); display: flex; flex-shrink: 0; transition: all 0.3s; }
+  .si { flex: 1; text-align: center; padding: 8px 4px; border-right: 1px solid var(--border-statbar); }
+  .si:last-child { border-right: none; }
+  .sl { font-size: 13px; color: var(--accent-sl); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .sv { font-size: 21px; font-weight: 600; color: var(--text-primary); }
+  .sv.pos { color: #4ade80; } .sv.neg { color: #f87171; }
+
+  .main { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+  .lcol { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 10px 10px 10px 14px; gap: 8px; }
+
+  .wtrack { display: flex; gap: 6px; flex-shrink: 0; }
+  .dbox { flex: 1; background: var(--bg-dbox); border: 1px solid var(--border-dbox); border-radius: 9px; padding: 8px 6px; display: flex; flex-direction: column; align-items: center; min-width: 0; transition: all 0.2s; }
+  .dbox.active { border-color: var(--border-dbox-active); background: var(--bg-dbox-active); box-shadow: var(--shadow-dbox-active); }
+  .dbox.profit { border-color: rgba(74,222,128,0.5); background: rgba(74,222,128,0.07); }
+  .dbox.lossday { border-color: rgba(248,113,113,0.5); background: rgba(248,113,113,0.07); }
+  .dbox.beday { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.05); }
+  .dbox.empty { opacity: 0.35; }
+  .dlbl { font-size: 13px; color: var(--accent-sh, #a78bfa); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; font-weight: 600; }
+  .dpnl { font-size: 19px; font-weight: 800; text-align: center; line-height: 1.2; color: #fff; }
+  .dpnl.pos { color: #4ade80; } .dpnl.neg { color: #f87171; } .dpnl.be { color: #fff; }
+  .dmeta { font-size: 12px; color: rgba(255,255,255,0.38); margin-top: 3px; text-align: center; line-height: 1.3; }
+  .wkbox { width: 115px; flex-shrink: 0; background: rgba(124,58,237,0.18); border: 1px solid rgba(180,100,255,0.38); border-radius: 9px; padding: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .wlbl { font-size: 12px; color: #c4b5fd; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 3px; font-weight: 700; }
+  .wpnl { font-size: 20px; font-weight: 800; }
+  .wpnl.pos { color: #4ade80; } .wpnl.neg { color: #f87171; }
+  .wsub { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+
+  .cinner { position: relative; flex: 1; min-height: 0; background: var(--bg-chart); border-radius: 9px; border: 1px solid var(--border-chart); overflow: hidden; transition: all 0.3s; }
+  .cinner canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
+  .cleg { display: flex; gap: 14px; justify-content: center; padding: 4px 0 0; flex-shrink: 0; }
+  .li { display: flex; align-items: center; gap: 4px; font-size: 14px; color: rgba(255,255,255,0.45); }
+  .ld { width: 10px; height: 10px; border-radius: 50%; }
+
+  .panel { width: 255px; min-width: 255px; background: var(--bg-panel); border-left: 1px solid var(--border-panel); padding: 12px; overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; transition: all 0.3s; }
+  .pstats { flex: 1; }
+  .ptit { font-size: 13px; font-weight: 700; color: var(--accent-panel-lbl); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid var(--accent-border-panel); }
+  .mpr { display: flex; justify-content: space-between; margin-bottom: 11px; gap: 4px; }
+  .mtr { display: flex; justify-content: space-between; margin-bottom: 11px; gap: 2px; }
+  .mb { min-width: 0; } .mb.c { text-align: center; } .mb.r { text-align: right; }
+  .ml { font-size: 12px; color: var(--accent-ml); margin-bottom: 2px; }
+  .mv { font-size: 17px; font-weight: 700; color: var(--text-primary); }
+  .mv.pos { color: #4ade80; } .mv.neg { color: #f87171; }
+  .sh { font-size: 12px; color: var(--accent-sh); margin: 3px 0 6px; }
+  .wmark { text-align: center; padding: 10px 6px 6px; border-top: 1px solid var(--accent-border-panel); margin-top: 8px; flex-shrink: 0; }
+  .wn { font-size: 24px; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; background: var(--accent-wmark); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 8px rgba(168,85,247,0.4)); line-height: 1; margin-bottom: 5px; }
+  .wl { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(196,165,253,0.5); line-height: 1.8; font-style: italic; }
+
+  /* Overall stats inside panel — moved above profitability */
+  .panel-overall { border-bottom: 1px solid rgba(180,100,255,0.18); margin-bottom: 10px; padding-bottom: 10px; }
+  .po-row { display: flex; justify-content: space-between; margin-bottom: 9px; gap: 4px; }
+  .po-item { flex: 1; min-width: 0; }
+  .po-item.r { text-align: right; }
+  .pol { font-size: 11px; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+  .pov { font-size: 17px; font-weight: 700; color: #fff; }
+  .pov.pos { color: #4ade80; } .pov.neg { color: #f87171; }
+
+  /* Reset All button in panel */
+  .reset-all-btn { width: 100%; margin-top: 10px; padding: 8px; background: #000; border: 1px solid rgba(255,255,255,0.2); border-radius: 7px; color: #fff; font-size: 13px; font-family: 'Inter',sans-serif; font-weight: 600; cursor: pointer; letter-spacing: 0.04em; transition: background 0.15s; }
+  .reset-all-btn:hover { background: #111; }
+
+  .hpage { background: var(--bg-base, #000); }
+  .htop { background: var(--bg-topbar, #000); border-bottom: 1px solid var(--border-main, rgba(180,100,255,0.25)); padding: 8px 14px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .hinner { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 10px 12px; gap: 8px; background: var(--bg-base, #000); }
+  .hrow { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+  .hscroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0; scrollbar-width: none; -ms-overflow-style: none; }
+  .hscroll::-webkit-scrollbar { display: none; }
+  .wcard { background: var(--bg-dbox,#0a0520); border: 1px solid var(--border-dbox,rgba(180,100,255,0.2)); border-bottom: none; flex-shrink: 0; height: calc((100vh - 110px) / 6); display: flex; flex-direction: column; overflow: hidden; }
+  .wcard:last-child { border-bottom: 1px solid var(--border-dbox,rgba(180,100,255,0.2)); }
+  .wchdr { background: rgba(124,58,237,0.22); padding: 3px 12px; display: flex; align-items: center; border-bottom: 1px solid rgba(180,100,255,0.15); flex-shrink: 0; }
+  .wcti { font-size: 14px; font-weight: 700; color: #d8b4fe; }
+  .wcpnl { font-size: 17px; font-weight: 800; }
+  .wchdr { display: none; }
+  .wcdays { display: flex; background: var(--bg-base,#000); flex: 1; }
+  .wcd { flex: 1; padding: 4px 6px; border-right: 1px solid var(--border-dbox,rgba(180,100,255,0.12)); text-align: center; background: var(--bg-dbox,#0a0520); display: flex; flex-direction: column; justify-content: center; }
+  .wcd:last-child { border-right: none; }
+  .wcd:hover { background: var(--accent-soft,rgba(124,58,237,0.08)); }
+  .wcd-week { width: 90px; flex-shrink: 0; padding: 4px 8px; text-align: center; background: var(--accent-chip-bg,rgba(124,58,237,0.22)); border-right: 2px solid var(--accent-chip-border,rgba(180,100,255,0.3)); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  .wcd-total { flex: 1; padding: 4px 6px; text-align: center; background: var(--accent-soft,rgba(124,58,237,0.14)); border-left: 2px solid var(--accent-chip-border,rgba(180,100,255,0.3)); display: flex; flex-direction: column; justify-content: center; }
+  .wcdl { font-size: 14px; color: var(--text-primary,#fff); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+  .wcdp { font-size: 16px; font-weight: 800; }
+  .wcdp.pos { color: #4ade80; } .wcdp.neg { color: #f87171; } .wcdp.be { color: var(--text-primary,#fff); }
+  .wcdm { font-size: 11px; color: var(--text-muted,rgba(255,255,255,0.35)); margin-top: 2px; line-height: 1.4; white-space: pre-line; }
+  .wcdm-white { font-size: 13px; color: var(--text-primary,#fff); margin-top: 3px; line-height: 1.5; white-space: pre-line; }
+  .wcd-total .wcdp { font-size: 16px; }
+  .wcd-total .wcdl { font-size: 14px; }
+  .hempty { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--text-muted,#333); font-style: italic; }
+  .hchip { background: var(--accent-soft,rgba(124,58,237,0.12)); border: 1px solid var(--border-dbox,rgba(180,100,255,0.2)); border-radius: 7px; padding: 6px 14px; display: flex; align-items: center; gap: 9px; }
+  .hcl { font-size: 11px; color: var(--accent-lbl,#a78bfa); text-transform: uppercase; letter-spacing: 0.07em; }
+  .hcv { font-size: 16px; font-weight: 800; color: var(--text-primary,#fff); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<canvas id="gc"></canvas>
+<div class="ui">
+
+<div class="page" id="pgBT">
+  <div class="topbar">
+    <button class="btn" style="background:rgba(6,78,59,0.85);border-color:#065f46;font-weight:700;color:#6ee7b7;box-shadow:0 0 8px rgba(16,185,129,0.25)" onclick="endDay()">End Day</button>
+    <div class="sep"></div>
+    <button class="btn hist" onclick="goHist()">History</button>
+    <button class="btn" style="background:rgba(59,58,237,0.35);border-color:rgba(100,100,255,0.5)" onclick="goSaved()">💾 Saved</button>
+    <button class="btn" style="background:rgba(6,78,59,0.85);border-color:#065f46;font-weight:700;color:#6ee7b7;box-shadow:0 0 8px rgba(16,185,129,0.25)" onclick="endWeek()">End Week</button>
+    <div class="sep"></div>
+    <button class="btn" onclick="resetDay()">↺ Day</button>
+    <button class="btn" onclick="resetWeek()">↺ Week</button>
+    <div class="sep"></div>
+    <div class="bal-chip">
+      <span class="bal-lbl">Balance</span>
+      <input class="bal-inp" id="balInp" type="number" placeholder="0.00" onchange="setInitialFromChip()" onkeydown="if(event.key==='Enter')setInitialFromChip()" />
+    </div>
+    <div class="sep"></div>
+    <input class="inp" id="inpW" placeholder="Win $" type="number" />
+    <button class="btn green" onclick="addT('win')">+ Profit</button>
+    <input class="inp" id="inpL" placeholder="Loss $" type="number" />
+    <button class="btn red" onclick="addT('loss')">− Loss</button>
+    <button class="btn gray" onclick="addT('be')">=&nbsp;BE</button>
+    <div class="sep"></div>
+    <button class="btn" onclick="undo()">Undo</button>
+    <div class="sep"></div>
+    <input class="name-inp" id="inpName" placeholder="strategy name..." />
+    <div style="margin-left:auto;flex-shrink:0;display:flex;align-items:center;gap:8px">
+      <span id="userEmail" style="font-size:11px;color:var(--text-muted,#555);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      <button onclick="signOut()" style="padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--text-muted,#888);font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap">Sign out</button>
+    </div>
+  </div>
+  <div class="sbar">
+    <div class="si"><div class="sl">PnL</div><div class="sv" id="sTT">—</div></div>
+    <div class="si"><div class="sl">Win Rate</div><div class="sv" id="sPNL">—</div></div>
+    <div class="si"><div class="sl">Trades</div><div class="sv" id="sWR">—</div></div>
+    <div class="si"><div class="sl">Total Wins</div><div class="sv" id="sWL">—</div></div>
+    <div class="si"><div class="sl">Total Losses</div><div class="sv" id="sBE">—</div></div>
+    <div class="si"><div class="sl">Breakeven Trades</div><div class="sv" id="sBEtotal">—</div></div>
+  </div>
+  <div class="main">
+    <div class="lcol">
+      <div class="wtrack">
+        <div class="dbox active" id="db0"><div class="dlbl">Day 1</div><div class="dpnl" id="dp0">—</div><div class="dmeta" id="dm0">current</div></div>
+        <div class="dbox empty" id="db1"><div class="dlbl">Day 2</div><div class="dpnl" id="dp1">—</div><div class="dmeta" id="dm1">—</div></div>
+        <div class="dbox empty" id="db2"><div class="dlbl">Day 3</div><div class="dpnl" id="dp2">—</div><div class="dmeta" id="dm2">—</div></div>
+        <div class="dbox empty" id="db3"><div class="dlbl">Day 4</div><div class="dpnl" id="dp3">—</div><div class="dmeta" id="dm3">—</div></div>
+        <div class="dbox empty" id="db4"><div class="dlbl">Day 5</div><div class="dpnl" id="dp4">—</div><div class="dmeta" id="dm4">—</div></div>
+      </div>
+      <div class="cinner">
+        <canvas id="eqC" role="img" aria-label="Equity curve chart">Equity curve</canvas>
+      </div>
+      <div class="cleg">
+        <div class="li"><div class="ld" style="background:#4ade80"></div>Win</div>
+        <div class="li"><div class="ld" style="background:#f87171"></div>Loss</div>
+        <div class="li"><div class="ld" style="background:#fff"></div>BE</div>
+        <div class="li"><div class="ld" style="background:#38bdf8"></div>Day end</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="pstats">
+        <div class="ptit">Profitability</div>
+        <div class="mpr">
+          <div class="mb"><div class="ml">Profit Factor</div><div class="mv" id="pPF">—</div></div>
+          <div class="mb r"><div class="ml">Elite Score</div><div class="mv" id="pES">—</div></div>
+        </div>
+        <div class="ptit">Risk</div>
+        <div class="sh">Largest</div>
+        <div class="mpr">
+          <div class="mb"><div class="ml">Profit Trade</div><div class="mv pos" id="pLW">—</div></div>
+          <div class="mb r"><div class="ml">Loss Trade</div><div class="mv neg" id="pLL">—</div></div>
+        </div>
+        <div class="sh">Max Consecutive</div>
+        <div class="mtr">
+          <div class="mb"><div class="ml">Wins</div><div class="mv pos" id="pCW">—</div></div>
+          <div class="mb c"><div class="ml">BE</div><div class="mv" id="pCBE">—</div></div>
+          <div class="mb r"><div class="ml">Losses</div><div class="mv neg" id="pCL">—</div></div>
+        </div>
+        <div class="sh">Average</div>
+        <div class="mpr">
+          <div class="mb"><div class="ml">Win</div><div class="mv pos" id="pAW">—</div></div>
+          <div class="mb r"><div class="ml">Loss</div><div class="mv neg" id="pAL">—</div></div>
+        </div>
+        <div class="mpr">
+          <div class="mb"><div class="ml">Max Drawdown</div><div class="mv neg" id="pDD">—</div></div>
+          <div class="mb r"><div class="ml">Reward:Risk</div><div class="mv" id="pRR">—</div></div>
+        </div>
+      </div>
+      <div class="wmark">
+        <div class="wn">VOLTA</div>
+        <div class="wl">Trade the set up</div>
+        <div class="wl">Risk management is key</div>
+        <button class="reset-all-btn" onclick="resetAll()">Reset All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page hpage hidden" id="pgHist">
+  <div class="htop">
+    <button class="btn" onclick="goBT()">← Back</button>
+    <span style="font-size:15px;font-weight:700;color:#d8b4fe;margin-left:6px">📊 PnL History</span>
+    <span id="hSub" style="font-size:15px;color:#fff;font-weight:600;margin-left:8px"></span>
+    <div style="margin-left:auto">
+      <button style="background:#000;border:1px solid rgba(255,255,255,0.2);border-radius:7px;color:#fff;font-size:13px;font-family:'Inter',sans-serif;font-weight:600;padding:6px 14px;cursor:pointer;letter-spacing:0.04em" onclick="clearHistory()">Delete All</button>
+    </div>
+  </div>
+  <div class="hinner">
+    <div class="hrow">
+      <div class="hchip"><div class="hcl">Best Week</div><div class="hcv" style="color:#4ade80" id="hBW">—</div></div>
+      <div class="hchip"><div class="hcl">Worst Week</div><div class="hcv" style="color:#f87171" id="hWW">—</div></div>
+    </div>
+    <div class="hscroll" id="hScroll">
+      <div class="hempty" id="hEmpty">No completed weeks yet — end all 5 days to save a week.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SAVED TESTS PAGE -->
+<div class="page spage hidden" id="pgSaved">
+  <div class="stop">
+    <button class="btn" onclick="goBT()">← Back</button>
+    <span style="font-size:15px;font-weight:700;color:#818cf8;margin-left:6px">💾 Saved Tests</span>
+    <span id="sSub" style="font-size:12px;color:#555;margin-left:8px"></span>
+    <div style="margin-left:auto">
+      <button class="btn green" onclick="saveCurrentTest()">Save Current Test</button>
+    </div>
+  </div>
+  <div class="sinner">
+    <div class="slist" id="sList">
+      <div class="sempty" id="sEmpty">No saved tests yet — hit "Save Current Test" to save your session.</div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── SUPABASE SETUP ────────────────────────────────────────────────
+const SUPA_URL='https://ljmdslqkkcoifyirgwjp.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqbWRzbHFra2NvaWZ5aXJnd2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2ODI3ODEsImV4cCI6MjA5MzI1ODc4MX0.eKUq6QXjGHZuJN2YuWI27uv5j2Qtm3xBwETUPmVNvTs';
+const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+let sbUser=null;
+
+// Check auth — redirect to login if not signed in
+sb.auth.getSession().then(({data:{session}})=>{
+  if(!session){ window.location.href='volta-auth.html'; return; }
+  sbUser=session.user;
+  // Show user email in topbar
+  const el=document.getElementById('userEmail');
+  if(el) el.textContent=sbUser.email;
+});
+
+// Cloud save — debounced so it doesn't hammer the DB on every keystroke
+let saveTimer=null;
+async function cloudSave(){
+  if(!sbUser) return;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    await sb.from('backtester_data').upsert({
+      user_id:sbUser.id,
+      cur:JSON.stringify(cur),
+      locked_bal:lockedBal,
+      week:JSON.stringify(week),
+      day_idx:dayIdx,
+      all_t:JSON.stringify(allT),
+      all_wks:JSON.stringify(allWks),
+      strategy_name:document.getElementById('inpName').value||'',
+      theme:localStorage.getItem('vb_theme')||'galaxy',
+      updated_at:new Date().toISOString()
+    },{onConflict:'user_id'});
+  },800);
+}
+
+// Cloud load
+async function cloudLoad(){
+  if(!sbUser) return;
+  const {data,error}=await sb.from('backtester_data').select('*').eq('user_id',sbUser.id).single();
+  if(error||!data) return;
+  try{
+    if(data.cur) cur=JSON.parse(data.cur);
+    if(data.locked_bal) lockedBal=parseFloat(data.locked_bal)||1000;
+    if(data.week) week=JSON.parse(data.week);
+    if(data.day_idx!=null) dayIdx=parseInt(data.day_idx)||0;
+    if(data.all_t) allT=JSON.parse(data.all_t);
+    if(data.all_wks) allWks=JSON.parse(data.all_wks);
+    if(data.strategy_name) document.getElementById('inpName').value=data.strategy_name;
+    if(data.theme) localStorage.setItem('vb_theme',data.theme);
+  }catch(e){console.error('Load error',e);}
+}
+
+// Cloud saved tests
+async function cloudGetSavedTests(){
+  if(!sbUser) return [];
+  const {data}=await sb.from('saved_tests').select('*').eq('user_id',sbUser.id).order('saved_at',{ascending:false});
+  return data||[];
+}
+async function cloudSaveTest(entry){
+  if(!sbUser) return;
+  await sb.from('saved_tests').insert({
+    user_id:sbUser.id,
+    name:entry.name,
+    pnl:entry.pnl,
+    trades:entry.trades,
+    win_rate:parseFloat(entry.wr)||0,
+    weeks:entry.weeks,
+    snapshot:entry.snapshot
+  });
+}
+async function cloudDeleteTest(id){
+  if(!sbUser) return;
+  await sb.from('saved_tests').delete().eq('id',id).eq('user_id',sbUser.id);
+}
+
+async function signOut(){
+  await sb.auth.signOut();
+  window.location.href='volta-auth.html';
+}
+</script>
+
+<script>
+(function(){
+  const gc=document.getElementById('gc');const gx=gc.getContext('2d');let W,H,stars=[],nebulae=[],frame=0;
+  function resize(){W=gc.width=window.innerWidth;H=gc.height=window.innerHeight;build();}
+  function build(){
+    stars=Array.from({length:360},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.8+0.3,a:Math.random()*0.82+0.2,sp:Math.random()*0.005+0.001,ph:Math.random()*Math.PI*2,h:[260,275,290,255,310][Math.floor(Math.random()*5)],big:Math.random()<0.08}));
+    nebulae=[{x:.08*W,y:.2*H,r:.3*W,h:270,a:.09},{x:.88*W,y:.12*H,r:.23*W,h:255,a:.08},{x:.72*W,y:.82*H,r:.27*W,h:290,a:.08},{x:.22*W,y:.78*H,r:.21*W,h:248,a:.07},{x:.5*W,y:.38*H,r:.19*W,h:305,a:.055}];
+  }
+  function draw(){
+    frame++;gx.clearRect(0,0,W,H);
+    const bg=gx.createRadialGradient(W*.5,H*.55,0,W*.5,H*.5,Math.max(W,H)*.9);
+    bg.addColorStop(0,'rgba(20,8,50,1)');bg.addColorStop(.45,'rgba(10,3,30,1)');bg.addColorStop(1,'rgba(4,1,14,1)');
+    gx.fillStyle=bg;gx.fillRect(0,0,W,H);
+    nebulae.forEach(n=>{const g=gx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r);g.addColorStop(0,`hsla(${n.h},90%,55%,${n.a})`);g.addColorStop(.5,`hsla(${n.h},80%,40%,${n.a*.4})`);g.addColorStop(1,'transparent');gx.fillStyle=g;gx.beginPath();gx.arc(n.x,n.y,n.r,0,Math.PI*2);gx.fill();});
+    stars.forEach(s=>{const tw=s.a*(.55+.45*Math.sin(frame*s.sp+s.ph));const gr=s.big?s.r*10:s.r*6;const g=gx.createRadialGradient(s.x,s.y,0,s.x,s.y,gr);g.addColorStop(0,`hsla(${s.h},100%,95%,${tw*.8})`);g.addColorStop(.3,`hsla(${s.h},90%,75%,${tw*.3})`);g.addColorStop(1,'transparent');gx.fillStyle=g;gx.beginPath();gx.arc(s.x,s.y,gr,0,Math.PI*2);gx.fill();const cr=s.big?s.r*1.8:s.r;gx.beginPath();gx.arc(s.x,s.y,cr,0,Math.PI*2);gx.fillStyle=`hsla(${s.h},100%,98%,${Math.min(1,tw*1.2)})`;gx.fill();});
+    requestAnimationFrame(draw);
+  }
+  resize();draw();window.addEventListener('resize',resize);
+})();
+
+let cur=[],lockedBal=1000,chart=null;
+let week=[null,null,null,null,null],dayIdx=0,allT=[],allWks=[];
+
+// ── THEME SWITCHING ──────────────────────────────────────────────
+let settingsOpen=false;
+document.addEventListener('click',e=>{const w=document.getElementById('settingsWrap');if(w&&!w.contains(e.target))closeSettings();});
+function toggleSettings(){settingsOpen?closeSettings():openSettings();}
+function openSettings(){document.getElementById('settingsDrop').style.display='block';settingsOpen=true;}
+function closeSettings(){document.getElementById('settingsDrop').style.display='none';settingsOpen=false;}
+function setTheme(t){
+  const root=document.querySelector('.wrap');
+
+  // Always clear custom inline styles first so preset themes aren't overridden
+  const vars=['--bg-base','--bg-topbar','--bg-statbar','--bg-panel','--bg-chart','--bg-dbox',
+    '--border-main','--border-sep','--border-panel','--border-statbar','--border-chart',
+    '--border-dbox','--border-dbox-active','--border-width','--bg-dbox-active',
+    '--accent','--accent-soft','--accent-chip-bg','--accent-chip-border','--accent-lbl',
+    '--accent-sl','--accent-panel-lbl','--accent-ml','--accent-sh','--accent-border-panel',
+    '--accent-wmark','--chart-line','--chart-fill','--dayend-dot','--btn-bg','--btn-border',
+    '--inp-bg','--inp-border','--inp-border-focus','--text-primary','--text-muted','--galaxy-on'];
+  vars.forEach(v=>root.style.removeProperty(v));
+  root.style.fontFamily='';
+  document.documentElement.style.fontSize='';
+  document.querySelectorAll('.sv,.sl,.mv,.ml,.sh,.ptit,.dpnl,.dlbl,.dmeta,.btn,.inp,.name-inp,.bal-val,.bal-lbl,.pos,.neg').forEach(el=>{
+    el.style.fontSize='';el.style.fontFamily='';el.style.color='';
+  });
+
+  // Show/hide custom panel
+  const cp=document.getElementById('customPanel');
+  if(cp) cp.style.display=t==='custom'?'block':'none';
+
+  if(t==='custom'){
+    loadCustomColours();
+    return;
+  }
+
+  // Apply preset theme
+  root.setAttribute('data-theme',t==='galaxy'?'':t);
+  const gc=document.getElementById('gc');
+  gc.style.opacity=t==='galaxy'?'1':'0';
+  document.querySelectorAll('.theme-opt').forEach(el=>el.classList.remove('selected'));
+  const opt=document.getElementById('opt-'+t);if(opt)opt.classList.add('selected');
+  if(chart){
+    const line=t==='pro'?'#3b82f6':t==='lambo'?'#f5c400':t==='dark'?'#cccccc':t==='light'?'#2563eb':'#a855f7';
+    const fill=t==='pro'?'rgba(59,130,246,0.08)':t==='lambo'?'rgba(245,196,0,0.08)':t==='dark'?'rgba(200,200,200,0.05)':t==='light'?'rgba(37,99,235,0.08)':'rgba(168,85,247,0.1)';
+    chart.data.datasets[0].borderColor=line;
+    chart.data.datasets[0].backgroundColor=fill;
+    const tickCol=t==='light'?'#000':'rgba(255,255,255,0.38)';
+    const gridCol=t==='light'?'rgba(0,0,0,0.08)':t==='pro'?'rgba(59,130,246,0.06)':t==='dark'?'rgba(255,255,255,0.08)':'rgba(150,80,255,0.06)';
+    chart.options.scales.x.ticks.color=tickCol;
+    chart.options.scales.y.ticks.color=tickCol;
+    chart.options.scales.x.grid.color=gridCol;
+    chart.options.scales.y.grid.color=gridCol;
+    chart.update();
+  }
+  try{localStorage.setItem('vb_theme',t);}catch(e){}
+  closeSettings();
+}
+function loadTheme(){
+  try{const t=localStorage.getItem('vb_theme')||'galaxy';setTheme(t);}catch(e){setTheme('galaxy');}
+}
+
+const fd=n=>'$'+Math.abs(n).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+const ps=n=>(n>=0?'+':'-')+fd(Math.abs(n));
+const st=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+const updBal=()=>{
+  const inp=document.getElementById('balInp');
+  if(inp) inp.value=lockedBal;
+};
+
+function goHist(){document.getElementById('pgBT').classList.add('hidden');document.getElementById('pgHist').classList.remove('hidden');document.getElementById('pgSaved').classList.add('hidden');document.getElementById('settingsWrap').style.display='none';renderHist();}
+function goBT(){document.getElementById('pgHist').classList.add('hidden');document.getElementById('pgSaved').classList.add('hidden');document.getElementById('pgBT').classList.remove('hidden');document.getElementById('settingsWrap').style.display='block';}
+function goSaved(){document.getElementById('pgBT').classList.add('hidden');document.getElementById('pgHist').classList.add('hidden');document.getElementById('pgSaved').classList.remove('hidden');document.getElementById('settingsWrap').style.display='none';renderSaved();}
+
+function resetAll(){
+  if(!confirm('Reset everything? This clears all trades, weeks, and history.')) return;
+  cur=[];week=[null,null,null,null,null];dayIdx=0;allT=[];allWks=[];
+  document.getElementById('inpName').value='';
+  save();updateBoxes();updateChart();updateOverall();
+}
+
+async function saveCurrentTest(){
+  const name=document.getElementById('inpName').value.trim()||('Test '+(await cloudGetSavedTests()).length+1);
+  const allCombined=allT.concat(cur);
+  let wins=0,tp=0;allCombined.forEach(t=>{if(t.t==='win'){wins++;tp+=t.a;}else if(t.t==='loss'){tp+=t.a;}});
+  const entry={
+    name,
+    date:new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}),
+    pnl:tp,
+    trades:allCombined.length,
+    wr:allCombined.length?(wins/allCombined.length*100).toFixed(1):0,
+    weeks:allWks.length,
+    snapshot:{cur:JSON.parse(JSON.stringify(cur)),week:JSON.parse(JSON.stringify(week)),dayIdx,allT:JSON.parse(JSON.stringify(allT)),allWks:JSON.parse(JSON.stringify(allWks)),lockedBal}
+  };
+  await cloudSaveTest(entry);
+  await renderSaved();
+  const btn=document.querySelector('#pgSaved .btn.green');
+  if(btn){const orig=btn.textContent;btn.textContent='Saved!';setTimeout(()=>btn.textContent=orig,1200);}
+}
+
+async function renderSaved(){
+  const arr=await cloudGetSavedTests();
+  document.getElementById('sSub').textContent=arr.length+' test'+(arr.length!==1?'s':'')+' saved';
+  const list=document.getElementById('sList');const empty=document.getElementById('sEmpty');
+  list.querySelectorAll('.scard').forEach(e=>e.remove());
+  if(!arr.length){empty.style.display='flex';return;}
+  empty.style.display='none';
+  arr.forEach(e=>{
+    const col=e.pnl>=0?'#4ade80':'#f87171';
+    const pnlTxt=(e.pnl>=0?'+':'-')+'$'+Math.abs(e.pnl).toFixed(2);
+    const card=document.createElement('div');card.className='scard';
+    const dateStr=e.saved_at?new Date(e.saved_at).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}):e.date||'';
+    card.innerHTML=`
+      <div class="scard-main" onclick="loadTest('${e.id}')">
+        <div class="scard-name">${e.name}</div>
+        <div class="scard-meta">${dateStr} &nbsp;·&nbsp; ${e.trades} trades &nbsp;·&nbsp; ${e.win_rate||e.wr||0}% WR &nbsp;·&nbsp; ${e.weeks} week${e.weeks!==1?'s':''}</div>
+      </div>
+      <div class="scard-right">
+        <span class="scard-pnl" style="color:${col}">${pnlTxt}</span>
+        <button class="scard-del" onclick="event.stopPropagation();deleteTest('${e.id}')">Delete</button>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+async function loadTest(id){
+  const arr=await cloudGetSavedTests();
+  const entry=arr.find(e=>e.id===id);if(!entry)return;
+  const s=entry.snapshot;
+  cur=JSON.parse(JSON.stringify(s.cur));
+  week=JSON.parse(JSON.stringify(s.week));
+  dayIdx=s.dayIdx;
+  allT=JSON.parse(JSON.stringify(s.allT));
+  allWks=JSON.parse(JSON.stringify(s.allWks));
+  lockedBal=s.lockedBal;
+  document.getElementById('inpName').value=entry.name;
+  save();updBal();updateBoxes();updateChart();updateOverall();
+  goBT();
+}
+
+async function deleteTest(id){
+  await cloudDeleteTest(id);
+  await renderSaved();
+}
+
+function setInitialFromChip(){
+  const v=parseFloat(document.getElementById('balInp').value);
+  if(!isNaN(v)&&v>0){
+    lockedBal=v;
+    save();
+    updateChart();
+    updateOverall();
+  } else {
+    updBal(); // revert to last valid value if blank/invalid
+  }
+}
+
+function bigTxt(d){if(!d)return'—';const be=d.w===0&&d.l===0&&d.be>0;return be?(d.be===1?'1 BE':d.be+' BEs'):ps(d.pnl);}
+function bigCls(d){if(!d)return'dpnl';return(d.w===0&&d.l===0&&d.be>0)?'dpnl be':'dpnl '+(d.pnl>=0?'pos':'neg');}
+function metaTxt(d){if(!d)return'—';if(d.w===0&&d.l===0&&d.be>0)return d.be+' breakeven trade'+(d.be!==1?'s':'');let s=d.w+'W / '+d.l+'L';if(d.be>0)s+=' / '+d.be+'BE';return s;}
+
+function updateBoxes(){
+  for(let i=0;i<5;i++){
+    const box=document.getElementById('db'+i),pEl=document.getElementById('dp'+i),mEl=document.getElementById('dm'+i),d=week[i];
+    box.className='dbox';
+    if(i===dayIdx)box.classList.add('active');
+    else if(!d)box.classList.add('empty');
+    else{const be=d.w===0&&d.l===0&&d.be>0;box.classList.add(be?'beday':d.pnl>=0?'profit':'lossday');}
+    if(d){pEl.textContent=bigTxt(d);pEl.className=bigCls(d);mEl.textContent=metaTxt(d);}
+    else if(i===dayIdx){const s=calcS(cur,lockedBal);if(s&&s.n>0){const ld={w:s.w,l:s.l,be:s.be,n:s.n,pnl:s.pnl};pEl.textContent=bigTxt(ld);pEl.className=bigCls(ld);mEl.textContent='live · '+metaTxt(ld);}else{pEl.textContent='—';pEl.className='dpnl';mEl.textContent='current';}}
+    else{pEl.textContent='—';pEl.className='dpnl';mEl.textContent='—';}
+  }
+  const cp=week.filter(Boolean).reduce((a,d)=>a+d.pnl,0);
+  const ls=calcS(cur,lockedBal);const wt=cp+(ls?ls.pnl:0);const cc=week.filter(Boolean).length;
+}
+
+function endDay(){
+  const s=calcS(cur,lockedBal);
+  const d={pnl:s?s.pnl:0,w:s?s.w:0,l:s?s.l:0,be:s?s.be:0,n:cur.length,trades:JSON.parse(JSON.stringify(cur))};
+  week[dayIdx]=d;allT=allT.concat(d.trades);
+  if(dayIdx<4){dayIdx++;cur=[];}
+  else{const wp=week.reduce((a,d)=>a+(d?d.pnl:0),0);allWks.push({days:[...week],wp});week=[null,null,null,null,null];dayIdx=0;cur=[];}
+  // lockedBal never touched here
+  save();updateBoxes();updateChart();updateOverall();
+}
+
+function resetDay(){cur=[];save();updateChart();}
+function resetWeek(){week=[null,null,null,null,null];dayIdx=0;cur=[];save();updateBoxes();updateChart();}
+
+function updateOverall(){
+  const all=allT.concat(cur);
+  let wins=0,losses=0,be=0,tp=0;
+  all.forEach(t=>{
+    if(t.t==='win'){wins++;tp+=t.a;}
+    else if(t.t==='loss'){losses++;tp+=t.a;}
+    else if(t.t==='be'){be++;}
+  });
+
+  // All-time PnL (first)
+  const pnlEl=document.getElementById('sTT');
+  pnlEl.textContent=all.length?ps(tp):'—';
+  pnlEl.className='sv '+(tp>=0?'pos':'neg');
+
+  // All-time WR (second)
+  const wrEl=document.getElementById('sPNL');
+  wrEl.textContent=all.length?(wins/all.length*100).toFixed(1)+'%':'—';
+  wrEl.className='sv';
+
+  // All-time Trades (third)
+  st('sWR', all.length || '—');
+
+  // Total Wins (fourth - green)
+  const winsEl=document.getElementById('sWL');
+  winsEl.textContent=wins;
+  winsEl.className='sv pos';
+
+  // Total Losses (fifth - red)
+  const lossEl=document.getElementById('sBE');
+  lossEl.textContent=losses;
+  lossEl.className='sv neg';
+
+  // Breakeven trades (sixth)
+  st('sBEtotal', be);
+}
+
+function endWeek(){
+  // Save any remaining current day trades if present
+  if(cur.length>0){
+    const s=calcS(cur,lockedBal);
+    const d={pnl:s?s.pnl:0,w:s?s.w:0,l:s?s.l:0,be:s?s.be:0,n:cur.length,trades:JSON.parse(JSON.stringify(cur))};
+    week[dayIdx]=d;
+    allT=allT.concat(d.trades);
+    cur=[];
+  }
+  // Save week to history regardless of how many days completed
+  const wp=week.reduce((a,d)=>a+(d?d.pnl:0),0);
+  allWks.push({days:[...week],wp});
+  week=[null,null,null,null,null];dayIdx=0;
+  save();updateBoxes();updateChart();updateOverall();
+}
+
+function clearHistory(){
+  if(!confirm('Delete all week history? This cannot be undone.')) return;
+  allWks=[];
+  save();
+  renderHist();
+}
+
+function renderHist(){
+  document.getElementById('hSub').textContent=allWks.length+' week'+(allWks.length!==1?'s':'')+' completed';
+  if(allWks.length){document.getElementById('hBW').textContent=ps(Math.max(...allWks.map(w=>w.wp)));document.getElementById('hWW').textContent=ps(Math.min(...allWks.map(w=>w.wp)));}
+  else{st('hBW','—');st('hWW','—');}
+  const sc=document.getElementById('hScroll'),em=document.getElementById('hEmpty');
+  if(!allWks.length){em.style.display='flex';return;}em.style.display='none';
+  sc.querySelectorAll('.wcard').forEach(e=>e.remove());
+  [...allWks].reverse().forEach((w,ri)=>{
+    const wi=allWks.length-1-ri;const wc=w.wp>=0?'#4ade80':'#f87171';
+    const card=document.createElement('div');card.className='wcard';
+    const dr=document.createElement('div');dr.className='wcdays';
+
+    // Week label cell (first)
+    const wlcell=document.createElement('div');wlcell.className='wcd-week';
+    wlcell.innerHTML=`<div style="font-size:13px;font-weight:800;color:#fff;letter-spacing:0.06em">Week<br>${wi+1}</div>`;
+    dr.appendChild(wlcell);
+
+    // 5 day cells
+    w.days.forEach((d,di)=>{
+      const cell=document.createElement('div');cell.className='wcd';
+      if(d){
+        const be=d.w===0&&d.l===0&&d.be>0;
+        const bt=be?(d.be===1?'1 BE':d.be+' BEs'):ps(d.pnl);
+        const bc='wcdp '+(be?'be':d.pnl>=0?'pos':'neg');
+        const mt=be?d.be+' BE trade'+(d.be!==1?'s':''):d.w+'W / '+d.l+'L'+(d.be>0?'\n'+d.be+' BE':'');
+        cell.innerHTML=`<div class="wcdl">Day ${di+1}</div><div class="${bc}">${bt}</div><div class="wcdm">${mt}</div>`;
+      } else {
+        cell.innerHTML=`<div class="wcdl">Day ${di+1}</div><div class="wcdp" style="color:#333">—</div>`;
+      }
+      dr.appendChild(cell);
+    });
+
+    // Total column
+    const totalDays=w.days.filter(Boolean);
+    const totalTrades=totalDays.reduce((a,d)=>a+d.n,0);
+    const totalW=totalDays.reduce((a,d)=>a+d.w,0);
+    const totalL=totalDays.reduce((a,d)=>a+d.l,0);
+    const totalBE=totalDays.reduce((a,d)=>a+d.be,0);
+    const tcol=document.createElement('div');tcol.className='wcd-total';
+    const tc=w.wp>=0?'#4ade80':'#f87171';
+    tcol.innerHTML=`
+      <div class="wcdl">Total</div>
+      <div class="wcdp" style="color:${tc}">${ps(w.wp)}</div>
+      <div class="wcdm-white">${totalTrades} trades\n${totalW}W / ${totalL}L${totalBE>0?'\n'+totalBE+' BE':''}</div>`;
+    dr.appendChild(tcol);
+    card.appendChild(dr);sc.appendChild(card);
+  });
+}
+
+function updateChart(){
+  // Panel shows ALL-TIME stats (all completed weeks + current week days + current day)
+  const allTrades = allT.concat(cur);
+  const s = allTrades.length ? calcS(allTrades, lockedBal) : null;
+  if(!s){['pPF','pES','pLW','pLL','pCW','pCL','pCBE','pAW','pAL','pDD','pRR'].forEach(id=>st(id,'—'));}
+  else{
+    st('pPF',s.pf.toFixed(2));st('pES',s.es);
+    st('pLW',s.lw>0?'+'+fd(s.lw):'—');st('pLL',s.ll>0?'-'+fd(s.ll):'—');
+    st('pCW',s.mcw);st('pCL',s.mcl);st('pCBE',s.mcbe);
+    st('pAW',s.aw>0?fd(s.aw):'—');st('pAL',s.al>0?fd(s.al):'—');
+    st('pDD',s.dd>0?'-'+fd(s.dd):'—');st('pRR',s.rr.toFixed(2));
+  }
+  let pts=[lockedBal],pcs=['rgba(200,150,255,0.5)'],bal=lockedBal;
+  const push=t=>{const d=t.t==='be'?0:t.a;bal=Math.round((bal+d)*100)/100;pts.push(bal);pcs.push(t.t==='win'?'#4ade80':t.t==='loss'?'#f87171':'#aaa');};
+  allWks.forEach(w=>w.days.filter(Boolean).forEach(d=>{d.trades.forEach(push);if(pts.length>1)pcs[pts.length-1]='#38bdf8';}));
+  week.filter(Boolean).forEach(d=>{d.trades.forEach(push);if(pts.length>1)pcs[pts.length-1]='#38bdf8';});
+  cur.forEach(push);
+  const lbls=pts.map((_,i)=>i===0?'Start':String(i));
+  const t=localStorage.getItem('vb_theme')||'galaxy';
+  const cLine=t==='pro'||t==='light'?'#3b82f6':t==='lambo'?'#f5c400':t==='dark'?'#888':'#a855f7';
+  const cFill=t==='pro'||t==='light'?'rgba(59,130,246,0.08)':t==='lambo'?'rgba(245,196,0,0.08)':t==='dark'?'rgba(200,200,200,0.05)':'rgba(168,85,247,0.08)';
+  const tickCol=t==='light'?'#000':'rgba(255,255,255,0.38)';
+  const gridCol=t==='light'?'rgba(0,0,0,0.08)':t==='pro'?'rgba(59,130,246,0.06)':'rgba(150,80,255,0.06)';
+  const canvas = document.getElementById('eqC');
+  if(!canvas) return;
+  if(!chart){
+    chart=new Chart(canvas.getContext('2d'),{type:'line',data:{labels:lbls,datasets:[{label:'Balance',data:pts,borderColor:cLine,backgroundColor:cFill,borderWidth:2,pointRadius:4,pointHoverRadius:6,pointBackgroundColor:pcs,pointBorderColor:pcs,fill:true,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(8,4,28,0.94)',borderColor:'rgba(168,85,247,0.5)',borderWidth:1,titleColor:'#fff',bodyColor:'#e0e0e0',callbacks:{label:ctx=>` Balance: ${fd(ctx.parsed.y)}`}}},scales:{x:{ticks:{color:tickCol,font:{size:11},maxTicksLimit:15},grid:{color:gridCol}},y:{ticks:{color:tickCol,font:{size:11},callback:v=>'$'+v.toLocaleString()},grid:{color:gridCol}}}}});
+  }else{
+    chart.data.labels=lbls;
+    chart.data.datasets[0].data=pts;
+    chart.data.datasets[0].pointBackgroundColor=pcs;
+    chart.data.datasets[0].pointBorderColor=pcs;
+    chart.data.datasets[0].borderColor=cLine;
+    chart.data.datasets[0].backgroundColor=cFill;
+    chart.options.scales.x.ticks.color=tickCol;
+    chart.options.scales.y.ticks.color=tickCol;
+    chart.options.scales.x.grid.color=gridCol;
+    chart.options.scales.y.grid.color=gridCol;
+    chart.update();
+  }
+  updateBoxes();updateOverall();
+}
+
+function calcS(tds,base){
+  if(!tds||!tds.length)return null;
+  let bal=base,mb=base,dd=0,w=0,l=0,be=0,tw=0,tl=0,lw=0,ll=0,cw=0,cl=0,cbe=0,mcw=0,mcl=0,mcbe=0,pts=[base];
+  tds.forEach(t=>{let d=0;if(t.t==='be'){be++;cbe++;cw=0;cl=0;mcbe=Math.max(mcbe,cbe);}else{d=t.a;if(d>0){w++;tw+=d;lw=Math.max(lw,d);cw++;cl=0;cbe=0;mcw=Math.max(mcw,cw);}else{l++;tl+=Math.abs(d);ll=Math.max(ll,Math.abs(d));cl++;cw=0;cbe=0;mcl=Math.max(mcl,cl);}}bal=Math.round((bal+d)*100)/100;pts.push(bal);mb=Math.max(mb,bal);dd=Math.max(dd,mb-bal);});
+  const n=tds.length,wr=n?w/n*100:0,pnl=bal-base,pf=tl>0?tw/tl:(tw>0?99:0),aw=w?tw/w:0,al=l?tl/l:0,rr=al>0?aw/al:0;
+  const ddp=mb>0?(dd/mb)*100:0,es=Math.min(100,Math.max(0,wr*.4+Math.min(pf,3)/3*40+Math.max(0,20-ddp))).toFixed(1);
+  return{w,l,be,n,wr,pnl,pf,aw,al,lw,ll,mcw,mcl,mcbe,dd,rr,es,pts,base};
+}
+
+function addT(type){if(type==='be'){cur.push({t:'be',a:0});save();updateChart();return;}const raw=parseFloat(document.getElementById(type==='win'?'inpW':'inpL').value);if(isNaN(raw)||raw===0)return;cur.push({t:type,a:type==='loss'?-Math.abs(raw):Math.abs(raw)});save();updateChart();}
+function undo(){cur.pop();save();updateChart();}
+
+function save(){
+  try{
+    localStorage.setItem('vb_cur',JSON.stringify(cur));
+    localStorage.setItem('vb_bal',String(lockedBal));
+    localStorage.setItem('vb_week',JSON.stringify(week));
+    localStorage.setItem('vb_di',String(dayIdx));
+    localStorage.setItem('vb_wks',JSON.stringify(allWks));
+    localStorage.setItem('vb_all',JSON.stringify(allT));
+    localStorage.setItem('vb_nm',document.getElementById('inpName').value);
+  }catch(e){}
+  cloudSave();
+}
+
+async function loadSave(){
+  // Try cloud first, fallback to localStorage
+  await cloudLoad();
+  // Fill any missing values from localStorage
+  try{
+    const c=localStorage.getItem('vb_cur'),b=localStorage.getItem('vb_bal');
+    const wk=localStorage.getItem('vb_week'),di=localStorage.getItem('vb_di');
+    const ws=localStorage.getItem('vb_wks'),at=localStorage.getItem('vb_all'),nm=localStorage.getItem('vb_nm');
+    if(!cur.length&&c) cur=JSON.parse(c);
+    if(lockedBal===1000&&b) lockedBal=parseFloat(b)||1000;
+    if(!week.some(Boolean)&&wk) week=JSON.parse(wk);
+    if(dayIdx===0&&di) dayIdx=parseInt(di)||0;
+    if(!allWks.length&&ws) allWks=JSON.parse(ws)||[];
+    if(!allT.length&&at) allT=JSON.parse(at)||[];
+    if(nm&&!document.getElementById('inpName').value) document.getElementById('inpName').value=nm;
+  }catch(e){}
+  updBal();updateBoxes();updateChart();updateOverall();
+}
+
+loadSave();
+loadTheme();
+</script>
+
+<!-- Settings dropdown - fixed overlay completely outside all page containers -->
+<div id="settingsWrap" style="position:fixed;top:0;right:0;z-index:99999;pointer-events:none">
+  <button id="settingsBtn" onclick="toggleSettings()" style="position:fixed;top:8px;right:14px;padding:6px 11px;border-radius:7px;border:1px solid rgba(200,150,255,0.25);background:rgba(255,255,255,0.07);color:#fff;cursor:pointer;font-size:15px;font-family:Inter,sans-serif;pointer-events:all">⚙ Theme</button>
+  <div id="settingsDrop" style="display:none;position:fixed;top:48px;right:14px;width:330px;background:#0d1117;border:1px solid #252e40;border-radius:12px;box-shadow:0 24px 80px rgba(0,0,0,0.9);z-index:99999;pointer-events:all;overflow:hidden;max-height:calc(100vh - 70px);overflow-y:auto">
+    <div style="padding:12px 16px;font-size:12px;font-weight:700;color:#e2eaf8;letter-spacing:0.06em;border-bottom:1px solid #1c2a3a;background:#0a0f1a;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1">
+      <span>Choose Theme</span>
+      <span onclick="closeSettings()" style="cursor:pointer;color:#3b5268;font-size:20px;line-height:1">✕</span>
+    </div>
+    <div style="padding:12px 16px">
+      <div style="font-size:10px;color:#3b5268;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:10px">Themes</div>
+      <div class="theme-opt selected" id="opt-galaxy" onclick="setTheme('galaxy')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#12082e,#4a1d96,#a855f7)"></div>
+        <div class="theme-info"><div class="theme-name">Galaxy Purple</div><div class="theme-desc">Dark cosmos with animated stars</div></div>
+        <div class="theme-check"></div>
+      </div>
+      <div class="theme-opt" id="opt-pro" onclick="setTheme('pro')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#080c14,#0d1b2e,#3b82f6)"></div>
+        <div class="theme-info"><div class="theme-name">Professional Blue</div><div class="theme-desc">Clean dark navy, no galaxy</div></div>
+        <div class="theme-check"></div>
+      </div>
+      <div class="theme-opt" id="opt-lambo" onclick="setTheme('lambo')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#0a0800,#1a1400,#f5c400)"></div>
+        <div class="theme-info"><div class="theme-name">Lamborghini</div><div class="theme-desc">Pure black with gold accents</div></div>
+        <div class="theme-check"></div>
+      </div>
+      <div class="theme-opt" id="opt-dark" onclick="setTheme('dark')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#080808,#141414,#3a3a3a)"></div>
+        <div class="theme-info"><div class="theme-name">Dark Stealth</div><div class="theme-desc">Pure black, monochrome minimal</div></div>
+        <div class="theme-check"></div>
+      </div>
+      <div class="theme-opt" id="opt-light" onclick="setTheme('light')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#f0f4f8,#e2e8f0,#3b82f6)"></div>
+        <div class="theme-info"><div class="theme-name">Icy Light</div><div class="theme-desc">Clean white with blue accents</div></div>
+        <div class="theme-check"></div>
+      </div>
+      <div class="theme-opt" id="opt-custom" onclick="setTheme('custom')">
+        <div class="theme-swatch" id="customSwatch" style="background:linear-gradient(135deg,#0a0a0a,#111,#a855f7)"></div>
+        <div class="theme-info"><div class="theme-name">Custom</div><div class="theme-desc">Your own colours</div></div>
+        <div class="theme-check"></div>
+      </div>
+
+      <!-- Custom colour builder -->
+      <div id="customPanel" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid #1c2a3a">
+        <div style="font-size:10px;color:#3b5268;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:14px">Customise</div>
+
+        <!-- Colours row -->
+        <div style="font-size:10px;color:#3b5268;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin-bottom:8px">Colours</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+          <div style="text-align:center">
+            <input type="color" id="cpBg" value="#0a0a0a" oninput="applyCustom()" style="width:100%;height:34px;border:1px solid #2a3347;background:none;cursor:pointer;border-radius:8px;padding:2px;display:block;margin-bottom:5px">
+            <div style="font-size:10px;color:#8b9ab5;font-weight:600">Background</div>
+          </div>
+          <div style="text-align:center">
+            <input type="color" id="cpAccent" value="#a855f7" oninput="applyCustom()" style="width:100%;height:34px;border:1px solid #2a3347;background:none;cursor:pointer;border-radius:8px;padding:2px;display:block;margin-bottom:5px">
+            <div style="font-size:10px;color:#8b9ab5;font-weight:600">Accent</div>
+          </div>
+          <div style="text-align:center">
+            <input type="color" id="cpText" value="#ffffff" oninput="applyCustom()" style="width:100%;height:34px;border:1px solid #2a3347;background:none;cursor:pointer;border-radius:8px;padding:2px;display:block;margin-bottom:5px">
+            <div style="font-size:10px;color:#8b9ab5;font-weight:600">Text</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+          <div style="text-align:center">
+            <input type="color" id="cpWin" value="#4ade80" oninput="applyCustom()" style="width:100%;height:34px;border:1px solid #2a3347;background:none;cursor:pointer;border-radius:8px;padding:2px;display:block;margin-bottom:5px">
+            <div style="font-size:10px;color:#8b9ab5;font-weight:600">Wins</div>
+          </div>
+          <div style="text-align:center">
+            <input type="color" id="cpLoss" value="#f87171" oninput="applyCustom()" style="width:100%;height:34px;border:1px solid #2a3347;background:none;cursor:pointer;border-radius:8px;padding:2px;display:block;margin-bottom:5px">
+            <div style="font-size:10px;color:#8b9ab5;font-weight:600">Losses</div>
+          </div>
+          <div style="text-align:center">
+            <input type="color" id="cpLabel" value="#a855f7" oninput="applyCustom()" style="width:100%;height:34px;border:1px solid #2a3347;background:none;cursor:pointer;border-radius:8px;padding:2px;display:block;margin-bottom:5px">
+            <div style="font-size:10px;color:#8b9ab5;font-weight:600">Labels</div>
+          </div>
+        </div>
+
+        <!-- Border controls -->
+        <div style="margin-bottom:14px">
+          <div style="font-size:10px;color:#3b5268;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin-bottom:10px">Borders</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div style="text-align:center">
+              <input type="color" id="cpBorderCol" value="#a855f7" oninput="applyCustom()" style="width:100%;height:34px;border:1px solid #2a3347;background:none;cursor:pointer;border-radius:8px;padding:2px;display:block;margin-bottom:5px">
+              <div style="font-size:10px;color:#8b9ab5;font-weight:600">Colour</div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                <div style="font-size:10px;color:#8b9ab5;font-weight:600">Thickness</div>
+                <div id="cpThickLbl" style="font-size:10px;color:#8b9ab5">1px</div>
+              </div>
+              <input type="range" id="cpThick" min="1" max="4" value="1" step="0.5" oninput="applyCustom()" style="width:100%;accent-color:#3b82f6;cursor:pointer;margin-top:4px">
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+              <div style="font-size:10px;color:#8b9ab5;font-weight:600">Opacity</div>
+              <div id="cpBorderLbl" style="font-size:10px;color:#8b9ab5">50%</div>
+            </div>
+            <input type="range" id="cpBorder" min="0" max="100" value="50" oninput="applyCustom()" style="width:100%;accent-color:#3b82f6;cursor:pointer">
+          </div>
+        </div>
+
+        <!-- Font family -->
+        <div style="margin-bottom:14px">
+          <div style="font-size:10px;color:#3b5268;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin-bottom:8px">Font</div>
+          <select id="cpFont" onchange="applyCustom()" style="width:100%;padding:8px 10px;background:#0d1117;border:1px solid #2a3347;border-radius:7px;color:#e2eaf8;font-size:13px;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22><path fill=%22%238b9ab5%22 d=%22M6 8L1 3h10z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center">
+            <option value="Inter" style="font-family:Inter">Inter (Default)</option>
+            <option value="Georgia" style="font-family:Georgia">Georgia (Serif)</option>
+            <option value="'Courier New', monospace">Courier New (Mono)</option>
+            <option value="system-ui">System UI</option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+            <option value="'Arial', sans-serif">Arial</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value="'Verdana', sans-serif">Verdana</option>
+          </select>
+        </div>
+
+        <!-- Font size -->
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-size:10px;color:#3b5268;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">Font Size</div>
+            <div id="cpSizeLbl" style="font-size:10px;color:#8b9ab5">100%</div>
+          </div>
+          <input type="range" id="cpSize" min="70" max="130" value="100" oninput="applyCustom()" style="width:100%;accent-color:#3b82f6;cursor:pointer">
+        </div>
+
+        <button onclick="applyCustom()" style="width:100%;padding:9px;background:#3b82f6;border:none;border-radius:7px;color:#fff;font-size:13px;font-family:Inter,sans-serif;font-weight:600;cursor:pointer;letter-spacing:0.03em">Apply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  [data-theme="custom"] { --text-primary: var(--custom-text, #fff); }
+  [data-theme="custom"] .topbar,
+  [data-theme="custom"] .sbar .si,
+  [data-theme="custom"] .dbox,
+  [data-theme="custom"] .cinner,
+  [data-theme="custom"] .panel,
+  [data-theme="custom"] .ptit,
+  [data-theme="custom"] .wmark,
+  [data-theme="custom"] .obar .oi { border-width: var(--border-width, 1px) !important; }
+</style>
+
+<script>
+// Custom theme helpers
+function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return{r,g,b};}
+function lighten(hex,amt){const {r,g,b}=hexToRgb(hex);return `rgb(${Math.min(255,r+amt)},${Math.min(255,g+amt)},${Math.min(255,b+amt)})`;}
+function hexAlpha(hex,a){const {r,g,b}=hexToRgb(hex);return `rgba(${r},${g},${b},${a})`;}
+
+let customFont='Inter';
+
+function applyCustom(){
+  const bg=document.getElementById('cpBg').value;
+  const accent=document.getElementById('cpAccent').value;
+  const text=document.getElementById('cpText').value;
+  const winCol=document.getElementById('cpWin')?document.getElementById('cpWin').value:'#4ade80';
+  const lossCol=document.getElementById('cpLoss')?document.getElementById('cpLoss').value:'#f87171';
+  const labelCol=document.getElementById('cpLabel')?document.getElementById('cpLabel').value:'#a855f7';
+  const borderStr=parseInt(document.getElementById('cpBorder').value)/100;
+  const borderCol=document.getElementById('cpBorderCol')?document.getElementById('cpBorderCol').value:accent;
+  const borderThick=document.getElementById('cpThick')?parseFloat(document.getElementById('cpThick').value):1;
+  const sizeScale=parseInt(document.getElementById('cpSize').value)/100;
+  const fontSel=document.getElementById('cpFont');
+  customFont=fontSel?fontSel.value:'Inter';
+
+  document.getElementById('cpBorderLbl').textContent=Math.round(borderStr*100)+'%';
+  document.getElementById('cpSizeLbl').textContent=Math.round(sizeScale*100)+'%';
+  if(document.getElementById('cpThickLbl')) document.getElementById('cpThickLbl').textContent=borderThick+'px';
+
+  // Update swatch
+  document.getElementById('customSwatch').style.background=`linear-gradient(135deg,${bg},${lighten(bg,20)},${accent})`;
+
+  const root=document.querySelector('.wrap');
+  root.setAttribute('data-theme','custom');
+  const s=root.style;
+
+  // Font — apply to wrap and via CSS variable, affects all children
+  const ff=`${customFont},sans-serif`;
+  s.setProperty('--custom-font',ff);
+  root.style.fontFamily=ff;
+
+  // Font size — use a scale factor CSS variable, each element multiplies its base
+  // We override html font-size so rem-based or em-based elements scale
+  document.documentElement.style.fontSize=(16*sizeScale)+'px';
+  // Also directly scale the wrap so px-based elements scale too
+  s.setProperty('--font-scale', sizeScale);
+  // Apply to key elements that have hardcoded px sizes
+  const scalePx=(px)=>(px*sizeScale).toFixed(1)+'px';
+  document.querySelectorAll('.sv').forEach(el=>el.style.fontSize=scalePx(21));
+  document.querySelectorAll('.sl').forEach(el=>el.style.fontSize=scalePx(13));
+  document.querySelectorAll('.mv').forEach(el=>el.style.fontSize=scalePx(17));
+  document.querySelectorAll('.ml').forEach(el=>el.style.fontSize=scalePx(12));
+  document.querySelectorAll('.sh').forEach(el=>el.style.fontSize=scalePx(12));
+  document.querySelectorAll('.ptit').forEach(el=>el.style.fontSize=scalePx(13));
+  document.querySelectorAll('.dpnl').forEach(el=>el.style.fontSize=scalePx(19));
+  document.querySelectorAll('.dlbl').forEach(el=>el.style.fontSize=scalePx(13));
+  document.querySelectorAll('.dmeta').forEach(el=>el.style.fontSize=scalePx(12));
+  document.querySelectorAll('.btn').forEach(el=>{el.style.fontSize=scalePx(16);el.style.fontFamily=ff;});
+  document.querySelectorAll('.inp,.name-inp,.bal-val,.bal-lbl').forEach(el=>{el.style.fontSize=scalePx(16);el.style.fontFamily=ff;});
+
+  // Apply colours
+  s.setProperty('--bg-base',bg);
+  s.setProperty('--bg-topbar',lighten(bg,8));
+  s.setProperty('--bg-statbar',lighten(bg,5));
+  s.setProperty('--bg-panel',lighten(bg,5));
+  s.setProperty('--bg-chart',bg);
+  s.setProperty('--bg-dbox',lighten(bg,10));
+
+  // Border colours scaled by strength slider
+  s.setProperty('--border-main',hexAlpha(borderCol,0.12+borderStr*0.5));
+  s.setProperty('--border-sep',hexAlpha(borderCol,0.15+borderStr*0.5));
+  s.setProperty('--border-panel',hexAlpha(borderCol,0.08+borderStr*0.4));
+  s.setProperty('--border-statbar',hexAlpha(borderCol,0.06+borderStr*0.35));
+  s.setProperty('--border-chart',hexAlpha(borderCol,0.1+borderStr*0.4));
+  s.setProperty('--border-dbox',hexAlpha(borderCol,0.1+borderStr*0.5));
+  s.setProperty('--border-dbox-active',borderCol);
+  s.setProperty('--border-width',borderThick+'px');
+  s.setProperty('--bg-dbox-active',hexAlpha(accent,0.12));
+
+  s.setProperty('--accent',accent);
+  s.setProperty('--accent-soft',hexAlpha(accent,0.1));
+  s.setProperty('--accent-chip-bg',hexAlpha(accent,0.15));
+  s.setProperty('--accent-chip-border',hexAlpha(accent,0.4));
+  s.setProperty('--accent-lbl',accent);
+  s.setProperty('--accent-sl',hexAlpha(text,0.5));
+  s.setProperty('--accent-panel-lbl',hexAlpha(accent,0.8));
+  s.setProperty('--accent-ml',hexAlpha(text,0.45));
+  s.setProperty('--accent-sh',hexAlpha(text,0.35));
+  s.setProperty('--accent-border-panel',hexAlpha(accent,0.12+borderStr*0.3));
+  s.setProperty('--accent-wmark',`linear-gradient(135deg,${text},${accent})`);
+  s.setProperty('--chart-line',accent);
+  s.setProperty('--chart-fill',hexAlpha(accent,0.08));
+  s.setProperty('--dayend-dot',accent);
+  s.setProperty('--btn-bg',hexAlpha(accent,0.06));
+  s.setProperty('--btn-border',hexAlpha(accent,0.2+borderStr*0.3));
+  s.setProperty('--inp-bg',lighten(bg,8));
+  s.setProperty('--inp-border',hexAlpha(accent,0.2+borderStr*0.3));
+  s.setProperty('--inp-border-focus',accent);
+  s.setProperty('--text-primary',text);
+  s.setProperty('--text-muted',hexAlpha(text,0.4));
+  s.setProperty('--galaxy-on','0');
+  // Font colour overrides for wins, losses, labels
+  s.setProperty('--color-win',winCol);
+  s.setProperty('--color-loss',lossCol);
+  s.setProperty('--color-label',labelCol);
+  // Apply directly to all pos/neg/label elements
+  document.querySelectorAll('.pos,.sv.pos,.mv.pos,.dpnl.pos,.pov.pos,.wcdp.pos').forEach(el=>el.style.color=winCol);
+  document.querySelectorAll('.neg,.sv.neg,.mv.neg,.dpnl.neg,.pov.neg,.wcdp.neg').forEach(el=>el.style.color=lossCol);
+  document.querySelectorAll('.sl,.ml,.sh,.dlbl,.ptit,.wlbl,.al,.ol,.pol').forEach(el=>el.style.color=labelCol);
+
+  document.getElementById('gc').style.opacity='0';
+
+  // Update chart colours
+  const gridCol=hexAlpha(accent,0.04+borderStr*0.1);
+  if(chart){
+    // Recolour existing dots with new win/loss colours
+    chart.data.datasets[0].pointBackgroundColor=chart.data.datasets[0].pointBackgroundColor.map(c=>{
+      if(c==='#4ade80'||c.startsWith('rgba(74'))return winCol;
+      if(c==='#f87171'||c.startsWith('rgba(248'))return lossCol;
+      return c;
+    });
+    chart.data.datasets[0].pointBorderColor=chart.data.datasets[0].pointBackgroundColor;
+    chart.data.datasets[0].borderColor=accent;
+    chart.data.datasets[0].backgroundColor=hexAlpha(accent,0.08);
+    chart.options.scales.x.grid.color=gridCol;
+    chart.options.scales.y.grid.color=gridCol;
+    chart.options.scales.x.ticks.color=hexAlpha(text,0.5);
+    chart.options.scales.y.ticks.color=hexAlpha(text,0.5);
+    chart.update();
+  }
+
+  try{
+    localStorage.setItem('vb_theme','custom');
+    localStorage.setItem('vb_custom',JSON.stringify({bg,accent,text,winCol,lossCol,labelCol,border:document.getElementById('cpBorder').value,borderCol,borderThick,size:document.getElementById('cpSize').value,font:customFont}));
+  }catch(e){}
+
+  document.querySelectorAll('.theme-opt').forEach(el=>el.classList.remove('selected'));
+  document.getElementById('opt-custom').classList.add('selected');
+}
+
+function loadCustomColours(){
+  try{
+    const saved=localStorage.getItem('vb_custom');
+    if(!saved)return;
+    const d=JSON.parse(saved);
+    document.getElementById('cpBg').value=d.bg||'#0a0a0a';
+    document.getElementById('cpAccent').value=d.accent||'#a855f7';
+    document.getElementById('cpText').value=d.text||'#ffffff';
+    document.getElementById('cpBorder').value=d.border||50;
+    document.getElementById('cpSize').value=d.size||100;
+    if(d.winCol&&document.getElementById('cpWin'))document.getElementById('cpWin').value=d.winCol;
+    if(d.lossCol&&document.getElementById('cpLoss'))document.getElementById('cpLoss').value=d.lossCol;
+    if(d.labelCol&&document.getElementById('cpLabel'))document.getElementById('cpLabel').value=d.labelCol;
+    if(d.borderCol&&document.getElementById('cpBorderCol'))document.getElementById('cpBorderCol').value=d.borderCol;
+    if(d.borderThick&&document.getElementById('cpThick'))document.getElementById('cpThick').value=d.borderThick;
+    if(d.font){const sel=document.getElementById('cpFont');if(sel)sel.value=d.font;}
+    applyCustom();
+  }catch(e){}
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Volta — Trade the Set Up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050508;
+  --surface:#0c0c12;
+  --border:rgba(255,255,255,0.06);
+  --accent:#7c6dfa;
+  --accent2:#fa6d8e;
+  --green:#4ade80;
+  --red:#f87171;
+  --text:#f0eff8;
+  --muted:#5a5878;
+  --font-display:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:16px;line-height:1.6;overflow-x:hidden}
+
+/* ── NOISE OVERLAY ── */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.4}
+
+/* ── GRID LINES ── */
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse 80% 80% at 50% 0%,black 30%,transparent 100%)}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 60px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(20px);border-bottom:1px solid var(--border);background:rgba(5,5,8,0.7)}
+.nav-logo{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-links{display:flex;align-items:center;gap:40px}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;letter-spacing:0.03em;transition:color 0.2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--accent);color:#fff;padding:10px 22px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;letter-spacing:0.03em;transition:all 0.2s;border:none;cursor:pointer}
+.nav-cta:hover{background:#6a5ce8;transform:translateY(-1px)}
+
+/* ── HERO ── */
+.hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 20px 80px}
+
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(124,109,250,0.1);border:1px solid rgba(124,109,250,0.25);border-radius:100px;padding:6px 16px;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:40px;animation:fadeUp 0.6s ease both}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+
+.hero-title{font-family:var(--font-display);font-size:clamp(52px,8vw,110px);font-weight:800;line-height:0.95;letter-spacing:-0.02em;margin-bottom:30px;animation:fadeUp 0.7s 0.1s ease both}
+.hero-title .line1{display:block;color:var(--text)}
+.hero-title .line2{display:block;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+.hero-sub{font-size:clamp(16px,2vw,20px);color:var(--muted);max-width:520px;font-weight:300;margin-bottom:50px;line-height:1.7;animation:fadeUp 0.7s 0.2s ease both}
+
+.hero-actions{display:flex;gap:14px;animation:fadeUp 0.7s 0.3s ease both}
+.btn-primary{background:var(--accent);color:#fff;padding:16px 36px;border-radius:10px;font-size:16px;font-weight:600;text-decoration:none;transition:all 0.25s;border:none;cursor:pointer;letter-spacing:0.02em;display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{background:#6a5ce8;transform:translateY(-2px);box-shadow:0 20px 40px rgba(124,109,250,0.3)}
+.btn-secondary{background:transparent;color:var(--text);padding:16px 36px;border-radius:10px;font-size:16px;font-weight:500;text-decoration:none;transition:all 0.25s;border:1px solid var(--border);cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn-secondary:hover{border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.04);transform:translateY(-2px)}
+
+/* ── HERO STATS ── */
+.hero-stats{display:flex;gap:60px;margin-top:80px;padding-top:60px;border-top:1px solid var(--border);animation:fadeUp 0.7s 0.4s ease both}
+.stat-item{text-align:center}
+.stat-num{font-family:var(--font-display);font-size:36px;font-weight:800;color:var(--text);line-height:1}
+.stat-num span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-lbl{font-size:13px;color:var(--muted);margin-top:6px;letter-spacing:0.04em}
+
+/* ── PREVIEW MOCKUP ── */
+.preview-section{position:relative;z-index:1;padding:0 40px 120px;max-width:1300px;margin:0 auto}
+.preview-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(124,109,250,0.15) 0%,transparent 70%);pointer-events:none;filter:blur(40px)}
+.preview-frame{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,0.8),0 0 0 1px rgba(255,255,255,0.04);position:relative}
+.preview-bar{background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);padding:14px 18px;display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot-r{background:#f87171;opacity:0.7} .dot-y{background:#fbbf24;opacity:0.7} .dot-g{background:#4ade80;opacity:0.7}
+.preview-url{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;padding:5px 14px;font-size:12px;color:var(--muted);text-align:center;max-width:300px;margin:0 auto}
+.preview-content{padding:24px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 200px;gap:10px}
+.mini-card{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:16px;transition:border-color 0.3s}
+.mini-card:hover{border-color:rgba(124,109,250,0.3)}
+.mini-card.active{border-color:rgba(124,109,250,0.5);background:rgba(124,109,250,0.08)}
+.mini-card.profit{border-color:rgba(74,222,128,0.3);background:rgba(74,222,128,0.05)}
+.mini-card.loss{border-color:rgba(248,113,113,0.3);background:rgba(248,113,113,0.05)}
+.mc-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:6px}
+.mc-val{font-size:18px;font-weight:800;font-family:var(--font-display)}
+.mc-meta{font-size:10px;color:var(--muted);margin-top:3px}
+.mc-panel{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:14px;grid-row:span 2}
+.preview-chart{grid-column:1/-1;margin-top:0}
+
+/* ── FEATURES ── */
+.features{position:relative;z-index:1;padding:120px 60px;max-width:1200px;margin:0 auto}
+.section-label{font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
+.section-title{font-family:var(--font-display);font-size:clamp(36px,5vw,60px);font-weight:800;line-height:1.05;letter-spacing:-0.02em;margin-bottom:70px}
+.section-title em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.feature-card{background:var(--bg);padding:44px 36px;transition:background 0.3s}
+.feature-card:hover{background:var(--surface)}
+.feat-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:24px}
+.feat-title{font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:12px;letter-spacing:-0.01em}
+.feat-desc{font-size:14px;color:var(--muted);line-height:1.7;font-weight:300}
+
+/* ── HOW IT WORKS ── */
+.how{position:relative;z-index:1;padding:120px 60px;max-width:1200px;margin:0 auto}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:30px;margin-top:60px;position:relative}
+.steps::before{content:'';position:absolute;top:28px;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),transparent)}
+.step{text-align:center;position:relative}
+.step-num{width:56px;height:56px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:18px;font-weight:800;margin:0 auto 20px;position:relative;z-index:1;transition:all 0.3s}
+.step:hover .step-num{border-color:var(--accent);background:rgba(124,109,250,0.1);color:var(--accent)}
+.step-title{font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:8px}
+.step-desc{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* ── METRICS ── */
+.metrics{position:relative;z-index:1;padding:120px 60px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.metrics-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.metrics-text .section-title{margin-bottom:20px}
+.metrics-text p{color:var(--muted);font-size:16px;line-height:1.8;font-weight:300;margin-bottom:30px}
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.metric-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;transition:border-color 0.3s}
+.metric-card:hover{border-color:rgba(124,109,250,0.3)}
+.metric-val{font-family:var(--font-display);font-size:32px;font-weight:800;margin-bottom:4px}
+.metric-val.g{color:var(--green)} .metric-val.r{color:var(--red)} .metric-val.a{color:var(--accent)} .metric-val.w{color:var(--text)}
+.metric-lbl{font-size:12px;color:var(--muted);letter-spacing:0.04em}
+
+/* ── PRICING ── */
+.pricing{position:relative;z-index:1;padding:120px 60px;max-width:1000px;margin:0 auto;text-align:center}
+.pricing .section-title{margin-bottom:14px}
+.pricing-sub{color:var(--muted);font-size:16px;margin-bottom:60px;font-weight:300}
+.pricing-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;text-align:left}
+.price-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;position:relative;overflow:hidden;transition:transform 0.3s,border-color 0.3s}
+.price-card:hover{transform:translateY(-4px)}
+.price-card.featured{border-color:rgba(124,109,250,0.4);background:linear-gradient(135deg,rgba(124,109,250,0.08),rgba(250,109,142,0.04))}
+.price-card.featured::before{content:'Most Popular';position:absolute;top:20px;right:20px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:4px 10px;border-radius:100px}
+.price-tier{font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.price-val{font-family:var(--font-display);font-size:48px;font-weight:800;line-height:1;margin-bottom:6px}
+.price-val sup{font-size:24px;vertical-align:top;margin-top:8px}
+.price-period{font-size:13px;color:var(--muted);margin-bottom:30px}
+.price-features{list-style:none;margin-bottom:36px}
+.price-features li{padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--muted);display:flex;align-items:center;gap:10px;font-weight:300}
+.price-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.price-btn{display:block;width:100%;padding:14px;border-radius:9px;font-size:15px;font-weight:600;text-align:center;text-decoration:none;transition:all 0.2s;cursor:pointer;border:none;font-family:var(--font-body)}
+.price-btn.outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.price-btn.outline:hover{border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.04)}
+.price-btn.filled{background:var(--accent);color:#fff}
+.price-btn.filled:hover{background:#6a5ce8;box-shadow:0 10px 30px rgba(124,109,250,0.3)}
+
+/* ── CTA ── */
+.cta-section{position:relative;z-index:1;padding:120px 60px;text-align:center}
+.cta-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:800px;height:400px;background:radial-gradient(ellipse,rgba(124,109,250,0.12) 0%,transparent 70%);pointer-events:none;filter:blur(60px)}
+.cta-inner{position:relative;z-index:1}
+.cta-title{font-family:var(--font-display);font-size:clamp(40px,6vw,80px);font-weight:800;line-height:1;letter-spacing:-0.02em;margin-bottom:24px}
+.cta-sub{color:var(--muted);font-size:18px;margin-bottom:50px;font-weight:300}
+
+/* ── FOOTER ── */
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:50px 60px;display:flex;justify-content:space-between;align-items:center}
+.footer-logo{font-family:var(--font-display);font-size:18px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.footer-links{display:flex;gap:32px}
+.footer-links a{color:var(--muted);text-decoration:none;font-size:13px;transition:color 0.2s}
+.footer-links a:hover{color:var(--text)}
+.footer-copy{font-size:12px;color:var(--muted)}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(0.85)}}
+
+.reveal{opacity:0;transform:translateY(30px);transition:opacity 0.7s ease,transform 0.7s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* chart SVG animation */
+.chart-path{stroke-dasharray:2000;stroke-dashoffset:2000;animation:drawLine 2.5s ease forwards 0.5s}
+@keyframes drawLine{to{stroke-dashoffset:0}}
+
+/* Floating cards */
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.preview-frame{animation:float 6s ease-in-out infinite}
+
+@media(max-width:768px){
+  nav{padding:16px 20px}
+  .nav-links{display:none}
+  .hero{padding:100px 20px 60px}
+  .hero-stats{gap:30px}
+  .features{padding:80px 20px}
+  .features-grid{grid-template-columns:1fr}
+  .how{padding:80px 20px}
+  .steps{grid-template-columns:1fr 1fr;gap:20px}
+  .steps::before{display:none}
+  .metrics{padding:80px 20px}
+  .metrics-inner{grid-template-columns:1fr;gap:40px}
+  .pricing{padding:80px 20px}
+  .pricing-cards{grid-template-columns:1fr}
+  .cta-section{padding:80px 20px}
+  footer{padding:40px 20px;flex-direction:column;gap:20px;text-align:center}
+  .preview-content{grid-template-columns:1fr 1fr;gap:8px}
+  .mc-panel{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Volta</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#pricing">Pricing</a>
+  </div>
+  <a href="volta-auth.html" class="nav-cta">Get Started Free</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">
+    <span class="badge-dot"></span>
+    Manual Trading Backtester
+  </div>
+  <h1 class="hero-title">
+    <span class="line1">Trade the</span>
+    <span class="line2">Set Up.</span>
+  </h1>
+  <p class="hero-sub">Track every trade, analyse your edge, and manage risk like a professional. Volta gives you the clarity to trade with conviction.</p>
+  <div class="hero-actions">
+    <a href="volta-auth.html" class="btn-primary">Start for free →</a>
+    <a href="#features" class="btn-secondary">See features</a>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-num"><span>100%</span></div>
+      <div class="stat-lbl">Browser based</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num"><span>5</span> themes</div>
+      <div class="stat-lbl">Fully customisable</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num"><span>∞</span></div>
+      <div class="stat-lbl">Saved sessions</div>
+    </div>
+  </div>
+</section>
+
+<!-- PREVIEW MOCKUP -->
+<div class="preview-section reveal">
+  <div class="preview-glow"></div>
+  <div class="preview-frame">
+    <div class="preview-bar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <div class="preview-url">volta.app/dashboard</div>
+    </div>
+    <div class="preview-content">
+      <div class="mini-card profit">
+        <div class="mc-lbl">Day 1</div>
+        <div class="mc-val" style="color:#4ade80">+$2,400</div>
+        <div class="mc-meta">8W / 2L</div>
+      </div>
+      <div class="mini-card loss">
+        <div class="mc-lbl">Day 2</div>
+        <div class="mc-val" style="color:#f87171">−$600</div>
+        <div class="mc-meta">3W / 5L</div>
+      </div>
+      <div class="mini-card profit">
+        <div class="mc-lbl">Day 3</div>
+        <div class="mc-val" style="color:#4ade80">+$1,800</div>
+        <div class="mc-meta">7W / 1L</div>
+      </div>
+      <div class="mini-card active">
+        <div class="mc-lbl">Day 4 — Live</div>
+        <div class="mc-val" style="color:#a78bfa">+$900</div>
+        <div class="mc-meta">current</div>
+      </div>
+      <div class="mc-panel">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#5a5878;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06)">Analytics</div>
+        <div style="margin-bottom:10px"><div style="font-size:9px;color:#5a5878;margin-bottom:2px">Profit Factor</div><div style="font-size:16px;font-weight:800;font-family:'Syne',sans-serif">8.2</div></div>
+        <div style="margin-bottom:10px"><div style="font-size:9px;color:#5a5878;margin-bottom:2px">Win Rate</div><div style="font-size:16px;font-weight:800;font-family:'Syne',sans-serif;color:#4ade80">73.2%</div></div>
+        <div style="margin-bottom:10px"><div style="font-size:9px;color:#5a5878;margin-bottom:2px">Elite Score</div><div style="font-size:16px;font-weight:800;font-family:'Syne',sans-serif;color:#7c6dfa">91.4</div></div>
+        <div style="margin-bottom:0"><div style="font-size:9px;color:#5a5878;margin-bottom:2px">Reward:Risk</div><div style="font-size:16px;font-weight:800;font-family:'Syne',sans-serif">4.1</div></div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);font-size:14px;font-weight:900;font-family:'Syne',sans-serif;letter-spacing:0.2em;text-align:center;background:linear-gradient(135deg,#7c6dfa,#fa6d8e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">VOLTA</div>
+      </div>
+      <div class="preview-chart" style="grid-column:1/5">
+        <div style="background:rgba(255,255,255,0.02);border-radius:10px;border:1px solid rgba(255,255,255,0.05);padding:16px;height:160px;position:relative;overflow:hidden">
+          <svg width="100%" height="100%" viewBox="0 0 800 140" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#7c6dfa" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#7c6dfa" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0 120 L60 105 L120 90 L180 100 L240 82 L300 68 L360 55 L420 70 L480 50 L540 35 L600 42 L660 28 L720 18 L800 10 L800 140 L0 140Z" fill="url(#chartGrad)"/>
+            <path class="chart-path" d="M0 120 L60 105 L120 90 L180 100 L240 82 L300 68 L360 55 L420 70 L480 50 L540 35 L600 42 L660 28 L720 18 L800 10" fill="none" stroke="#7c6dfa" stroke-width="2"/>
+            <circle cx="120" cy="90" r="4" fill="#4ade80"/>
+            <circle cx="300" cy="68" r="4" fill="#4ade80"/>
+            <circle cx="480" cy="50" r="4" fill="#4ade80"/>
+            <circle cx="660" cy="28" r="4" fill="#4ade80"/>
+            <circle cx="180" cy="100" r="4" fill="#f87171"/>
+            <circle cx="420" cy="70" r="4" fill="#f87171"/>
+            <circle cx="240" cy="82" r="5" fill="#38bdf8" stroke="#050508" stroke-width="2"/>
+            <circle cx="540" cy="35" r="5" fill="#38bdf8" stroke="#050508" stroke-width="2"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features reveal" id="features">
+  <div class="section-label">Features</div>
+  <h2 class="section-title">Everything you need to<br><em>track your edge.</em></h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feat-icon" style="background:rgba(74,222,128,0.1)">📈</div>
+      <div class="feat-title">Live Equity Curve</div>
+      <div class="feat-desc">Watch your balance grow in real time as you log each trade. Colour-coded dots show every win, loss and breakeven at a glance.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon" style="background:rgba(124,109,250,0.1)">📊</div>
+      <div class="feat-title">Deep Analytics</div>
+      <div class="feat-desc">Profit Factor, Elite Score, Max Drawdown, Reward:Risk, consecutive streaks — all calculated automatically across your entire history.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon" style="background:rgba(250,109,142,0.1)">🗓</div>
+      <div class="feat-title">Weekly Calendar View</div>
+      <div class="feat-desc">See your PnL history laid out week by week with a full calendar grid. Scroll through completed weeks and spot your patterns instantly.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon" style="background:rgba(56,189,248,0.1)">💾</div>
+      <div class="feat-title">Saved Test Sessions</div>
+      <div class="feat-desc">Save and reload multiple backtests. Compare different strategies side by side and always go back to a previous session.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon" style="background:rgba(251,191,36,0.1)">🎨</div>
+      <div class="feat-title">5 Themes + Custom</div>
+      <div class="feat-desc">Galaxy Purple, Professional Blue, Lamborghini, Dark Stealth, Icy Light — or build your own with full colour, font and border controls.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon" style="background:rgba(52,211,153,0.1)">☁️</div>
+      <div class="feat-title">Cloud Sync</div>
+      <div class="feat-desc">Your data lives in the cloud. Log in from any device and pick up exactly where you left off. No exports, no transfers, no hassle.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how reveal" id="how">
+  <div class="section-label">How it works</div>
+  <h2 class="section-title">Up and running in<br><em>minutes.</em></h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-title">Create account</div>
+      <div class="step-desc">Sign up free in seconds. No credit card required.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-title">Set your balance</div>
+      <div class="step-desc">Enter your starting balance and name your strategy.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-title">Log your trades</div>
+      <div class="step-desc">Hit + Profit, − Loss or = BE after each trade. That's it.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-title">Track your edge</div>
+      <div class="step-desc">Your stats, curve and history build automatically over time.</div>
+    </div>
+  </div>
+</section>
+
+<!-- METRICS -->
+<section class="metrics reveal">
+  <div class="metrics-inner">
+    <div class="metrics-text">
+      <div class="section-label">Analytics</div>
+      <h2 class="section-title">Know your<br><em>numbers.</em></h2>
+      <p>Risk management is key. Volta gives you every stat you need to understand your trading edge and protect your capital.</p>
+      <a href="volta-auth.html" class="btn-primary">Start tracking →</a>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-val g">+$16,400</div>
+        <div class="metric-lbl">All-time PnL</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val a">68.4%</div>
+        <div class="metric-lbl">Win Rate</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val w">8.2</div>
+        <div class="metric-lbl">Profit Factor</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val r">−$900</div>
+        <div class="metric-lbl">Max Drawdown</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing reveal" id="pricing">
+  <div class="section-label">Pricing</div>
+  <h2 class="section-title">Simple, transparent<br><em>pricing.</em></h2>
+  <p class="pricing-sub">Start free. Upgrade when you're ready.</p>
+  <div class="pricing-cards">
+    <div class="price-card">
+      <div class="price-tier">Free</div>
+      <div class="price-val"><sup>$</sup>0</div>
+      <div class="price-period">forever</div>
+      <ul class="price-features">
+        <li>Full backtester access</li>
+        <li>5 themes + custom builder</li>
+        <li>Weekly PnL history</li>
+        <li>3 saved test sessions</li>
+        <li>All analytics & metrics</li>
+      </ul>
+      <a href="volta-auth.html" class="price-btn outline">Get started free</a>
+    </div>
+    <div class="price-card featured">
+      <div class="price-tier">Pro</div>
+      <div class="price-val"><sup>$</sup>9</div>
+      <div class="price-period">per month</div>
+      <ul class="price-features">
+        <li>Everything in Free</li>
+        <li>Unlimited saved sessions</li>
+        <li>Cloud sync across devices</li>
+        <li>Export to CSV / PDF</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="volta-auth.html" class="price-btn filled">Start Pro free →</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section reveal">
+  <div class="cta-glow"></div>
+  <div class="cta-inner">
+    <h2 class="cta-title">Ready to trade<br>with <em style="font-style:normal;background:linear-gradient(135deg,#7c6dfa,#fa6d8e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">conviction?</em></h2>
+    <p class="cta-sub">Join traders already using Volta to build their edge.</p>
+    <a href="volta-auth.html" class="btn-primary" style="font-size:18px;padding:18px 44px">Create free account →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Volta</div>
+  <div class="footer-links">
+    <a href="#">Features</a>
+    <a href="#">Pricing</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+  </div>
+  <div class="footer-copy">© 2026 Volta. All rights reserved.</div>
+</footer>
+
+<script>
+// Scroll reveal
+const reveals=document.querySelectorAll('.reveal');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target);}});
+},{threshold:0.1});
+reveals.forEach(el=>observer.observe(el));
+
+// Nav scroll effect
+window.addEventListener('scroll',()=>{
+  document.querySelector('nav').style.background=window.scrollY>50?'rgba(5,5,8,0.95)':'rgba(5,5,8,0.7)';
+});
+</script>
+</body>
+</html>

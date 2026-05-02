@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Volta — Sign In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL = 'https://ljmdslqkkcoifyirgwjp.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqbWRzbHFra2NvaWZ5aXJnd2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2ODI3ODEsImV4cCI6MjA5MzI1ODc4MX0.eKUq6QXjGHZuJN2YuWI27uv5j2Qtm3xBwETUPmVNvTs';
+const supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// If already logged in, go straight to app
+supabase.auth.getSession().then(({data:{session}})=>{
+  if(session) window.location.href='volta-backtester.html';
+});
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050508;
+  --surface:#0c0c12;
+  --surface2:#111118;
+  --border:rgba(255,255,255,0.07);
+  --border-focus:rgba(124,109,250,0.6);
+  --accent:#7c6dfa;
+  --accent2:#fa6d8e;
+  --green:#4ade80;
+  --red:#f87171;
+  --text:#f0eff8;
+  --muted:#5a5878;
+  --muted2:#3a3858;
+  --error:#f87171;
+  --font-display:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:16px}
+
+/* ── BACKGROUND ── */
+.bg-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black 20%,transparent 100%)}
+.bg-glow-left{position:fixed;top:-10%;left:-10%;width:600px;height:600px;background:radial-gradient(ellipse,rgba(124,109,250,0.12) 0%,transparent 65%);filter:blur(60px);pointer-events:none;z-index:0}
+.bg-glow-right{position:fixed;bottom:-10%;right:-10%;width:500px;height:500px;background:radial-gradient(ellipse,rgba(250,109,142,0.08) 0%,transparent 65%);filter:blur(60px);pointer-events:none;z-index:0}
+
+/* ── LAYOUT ── */
+.page{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+
+/* ── CARD ── */
+.card{width:100%;max-width:440px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:48px 44px;box-shadow:0 40px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.03) inset;animation:cardIn 0.5s cubic-bezier(0.22,1,0.36,1) both}
+@keyframes cardIn{from{opacity:0;transform:translateY(20px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ── LOGO ── */
+.logo{text-align:center;margin-bottom:36px}
+.logo-mark{display:inline-block;font-family:var(--font-display);font-size:28px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-tag{font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:0.04em}
+
+/* ── TABS ── */
+.tabs{display:flex;background:var(--surface2);border-radius:10px;padding:4px;margin-bottom:36px;gap:4px}
+.tab{flex:1;padding:9px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:var(--font-body);letter-spacing:0.02em}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,0.4)}
+
+/* ── FORM ── */
+.form-group{margin-bottom:18px;position:relative}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:8px}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:13px 16px;color:var(--text);font-size:15px;font-family:var(--font-body);outline:none;transition:border-color 0.2s,box-shadow 0.2s;-webkit-appearance:none}
+.form-input::placeholder{color:var(--muted2)}
+.form-input:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(124,109,250,0.12)}
+.form-input.error{border-color:rgba(248,113,113,0.5);box-shadow:0 0 0 3px rgba(248,113,113,0.08)}
+.form-input.success{border-color:rgba(74,222,128,0.4)}
+
+.input-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none;margin-top:12px}
+
+/* ── PASSWORD TOGGLE ── */
+.pw-wrap{position:relative}
+.pw-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;margin-top:12px;transition:color 0.2s}
+.pw-toggle:hover{color:var(--text)}
+
+/* ── PASSWORD STRENGTH ── */
+.pw-strength{height:3px;border-radius:10px;margin-top:8px;background:var(--surface2);overflow:hidden;display:none}
+.pw-strength-bar{height:100%;border-radius:10px;width:0%;transition:width 0.3s,background 0.3s}
+.pw-hint{font-size:11px;color:var(--muted);margin-top:5px;display:none}
+
+/* ── FORM ACTIONS ── */
+.forgot{display:block;text-align:right;font-size:12px;color:var(--muted);text-decoration:none;margin-top:-10px;margin-bottom:18px;transition:color 0.2s}
+.forgot:hover{color:var(--accent)}
+
+/* ── SUBMIT BTN ── */
+.btn-submit{width:100%;padding:15px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:700;font-family:var(--font-display);letter-spacing:0.04em;cursor:pointer;transition:all 0.25s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;position:relative;overflow:hidden}
+.btn-submit::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.1),transparent);opacity:0;transition:opacity 0.2s}
+.btn-submit:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(124,109,250,0.4)}
+.btn-submit:hover::before{opacity:1}
+.btn-submit:active{transform:translateY(0)}
+.btn-submit.loading{pointer-events:none;opacity:0.8}
+.btn-submit .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:none}
+.btn-submit.loading .spinner{display:block}
+.btn-submit.loading .btn-text{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── DIVIDER ── */
+.divider{display:flex;align-items:center;gap:14px;margin:24px 0}
+.divider-line{flex:1;height:1px;background:var(--border)}
+.divider-text{font-size:12px;color:var(--muted);white-space:nowrap;letter-spacing:0.04em}
+
+/* ── SOCIAL BTNS ── */
+.social-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-social{display:flex;align-items:center;justify-content:center;gap:9px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;text-decoration:none;font-family:var(--font-body)}
+.btn-social:hover{border-color:rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);transform:translateY(-1px)}
+.btn-social svg{width:18px;height:18px;flex-shrink:0}
+
+/* ── TERMS ── */
+.terms{font-size:11px;color:var(--muted);text-align:center;margin-top:20px;line-height:1.6}
+.terms a{color:var(--accent);text-decoration:none;transition:opacity 0.2s}
+.terms a:hover{opacity:0.8}
+
+/* ── ERROR MSG ── */
+.form-error{font-size:12px;color:var(--error);margin-top:5px;display:none;animation:shake 0.3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+/* ── SUCCESS STATE ── */
+.success-state{display:none;text-align:center;padding:20px 0}
+.success-icon{width:64px;height:64px;border-radius:50%;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px;animation:popIn 0.4s cubic-bezier(0.22,1,0.36,1)}
+@keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+.success-title{font-family:var(--font-display);font-size:22px;font-weight:800;margin-bottom:8px}
+.success-sub{font-size:14px;color:var(--muted);line-height:1.6}
+
+/* ── BACK LINK ── */
+.back-link{position:fixed;top:28px;left:28px;z-index:10;display:flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:14px;transition:color 0.2s}
+.back-link:hover{color:var(--text)}
+
+/* ── PANEL SPLIT (desktop only) ── */
+@media(min-width:900px){
+  .page{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;padding:0;align-items:stretch}
+  .page-left{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px;background:radial-gradient(ellipse at 30% 50%,rgba(124,109,250,0.1) 0%,transparent 60%)}
+  .page-right{display:flex;align-items:center;justify-content:center;padding:60px;border-left:1px solid var(--border)}
+  .card{box-shadow:none;background:transparent;border:none;padding:0;max-width:400px}
+}
+@media(max-width:899px){
+  .page-left{display:none}
+  html,body{overflow:auto}
+}
+
+/* Left panel content */
+.panel-logo{font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+.panel-title{font-family:var(--font-display);font-size:clamp(32px,4vw,52px);font-weight:800;line-height:1.05;letter-spacing:-0.02em;margin-bottom:20px}
+.panel-title em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.panel-sub{color:var(--muted);font-size:16px;line-height:1.7;font-weight:300;margin-bottom:48px}
+.panel-stats{display:flex;flex-direction:column;gap:16px}
+.panel-stat{display:flex;align-items:center;gap:14px;padding:16px 20px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px}
+.panel-stat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.panel-stat-text{font-size:14px;color:var(--muted);font-weight:300}
+.panel-stat-text strong{color:var(--text);font-weight:600;display:block;font-size:15px}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow-left"></div>
+<div class="bg-glow-right"></div>
+
+<a href="volta-landing.html" class="back-link">← Back to home</a>
+
+<div class="page">
+  <!-- LEFT PANEL (desktop) -->
+  <div class="page-left">
+    <div>
+      <div class="panel-logo">Volta</div>
+      <h1 class="panel-title">Risk management<br>is <em>key.</em></h1>
+      <p class="panel-sub">Track every trade. Analyse your edge. Build consistency that lasts.</p>
+      <div class="panel-stats">
+        <div class="panel-stat">
+          <div class="panel-stat-icon" style="background:rgba(74,222,128,0.1)">📈</div>
+          <div class="panel-stat-text"><strong>Live equity curve</strong>See your balance grow trade by trade</div>
+        </div>
+        <div class="panel-stat">
+          <div class="panel-stat-icon" style="background:rgba(124,109,250,0.1)">📊</div>
+          <div class="panel-stat-text"><strong>Deep analytics</strong>Profit factor, win rate, drawdown & more</div>
+        </div>
+        <div class="panel-stat">
+          <div class="panel-stat-icon" style="background:rgba(56,189,248,0.1)">☁️</div>
+          <div class="panel-stat-text"><strong>Cloud sync</strong>Access your data from any device</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL / CARD -->
+  <div class="page-right">
+    <div class="card">
+      <div class="logo">
+        <div class="logo-mark">Volta</div>
+        <div class="logo-tag">Trade the set up</div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab active" id="tab-signin" onclick="switchTab('signin')">Sign in</button>
+        <button class="tab" id="tab-signup" onclick="switchTab('signup')">Create account</button>
+      </div>
+
+      <!-- SIGN IN FORM -->
+      <div id="form-signin">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="si-email" type="email" placeholder="you@example.com" autocomplete="email"/>
+          <div class="form-error" id="si-email-err">Please enter a valid email address</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="pw-wrap">
+            <input class="form-input" id="si-password" type="password" placeholder="Enter your password" autocomplete="current-password"/>
+            <button class="pw-toggle" onclick="togglePw('si-password',this)" type="button">👁</button>
+          </div>
+          <div class="form-error" id="si-pw-err">Password is required</div>
+        </div>
+        <a href="#" class="forgot">Forgot password?</a>
+        <button class="btn-submit" id="si-btn" onclick="handleSignIn()">
+          <span class="btn-text">Sign in →</span>
+          <span class="spinner"></span>
+        </button>
+
+        <div class="divider">
+          <div class="divider-line"></div>
+          <div class="divider-text">or continue with</div>
+          <div class="divider-line"></div>
+        </div>
+
+        <div class="social-btns">
+          <a href="#" class="btn-social">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Google
+          </a>
+          <a href="#" class="btn-social">
+            <svg viewBox="0 0 24 24" fill="var(--text)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </a>
+        </div>
+        <div class="terms">By signing in you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a></div>
+      </div>
+
+      <!-- SIGN UP FORM -->
+      <div id="form-signup" style="display:none">
+        <div id="signup-fields">
+          <div class="form-group">
+            <label class="form-label">Full name</label>
+            <input class="form-input" id="su-name" type="text" placeholder="Your name" autocomplete="name"/>
+            <div class="form-error" id="su-name-err">Please enter your name</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" id="su-email" type="email" placeholder="you@example.com" autocomplete="email"/>
+            <div class="form-error" id="su-email-err">Please enter a valid email address</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="pw-wrap">
+              <input class="form-input" id="su-password" type="password" placeholder="Create a password" autocomplete="new-password" oninput="checkStrength(this.value)"/>
+              <button class="pw-toggle" onclick="togglePw('su-password',this)" type="button">👁</button>
+            </div>
+            <div class="pw-strength" id="pw-strength"><div class="pw-strength-bar" id="pw-bar"></div></div>
+            <div class="pw-hint" id="pw-hint"></div>
+            <div class="form-error" id="su-pw-err">Password must be at least 8 characters</div>
+          </div>
+          <button class="btn-submit" id="su-btn" onclick="handleSignUp()">
+            <span class="btn-text">Create account →</span>
+            <span class="spinner"></span>
+          </button>
+          <div class="divider">
+            <div class="divider-line"></div>
+            <div class="divider-text">or sign up with</div>
+            <div class="divider-line"></div>
+          </div>
+          <div class="social-btns">
+            <a href="#" class="btn-social">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+              Google
+            </a>
+            <a href="#" class="btn-social">
+              <svg viewBox="0 0 24 24" fill="var(--text)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+              GitHub
+            </a>
+          </div>
+          <div class="terms">By creating an account you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a></div>
+        </div>
+
+        <!-- Success state -->
+        <div class="success-state" id="signup-success">
+          <div class="success-icon">✓</div>
+          <div class="success-title">Account created!</div>
+          <div class="success-sub">Check your email for a confirmation link to activate your Volta account.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(tab){
+  document.getElementById('tab-signin').classList.toggle('active', tab==='signin');
+  document.getElementById('tab-signup').classList.toggle('active', tab==='signup');
+  document.getElementById('form-signin').style.display = tab==='signin' ? 'block' : 'none';
+  document.getElementById('form-signup').style.display = tab==='signup' ? 'block' : 'none';
+}
+
+function togglePw(id, btn){
+  const inp = document.getElementById(id);
+  inp.type = inp.type==='password' ? 'text' : 'password';
+  btn.textContent = inp.type==='password' ? '👁' : '🙈';
+}
+
+function checkStrength(val){
+  const bar = document.getElementById('pw-bar');
+  const hint = document.getElementById('pw-hint');
+  const wrap = document.getElementById('pw-strength');
+  wrap.style.display = 'block'; hint.style.display = 'block';
+  let score = 0;
+  if(val.length >= 8) score++;
+  if(/[A-Z]/.test(val)) score++;
+  if(/[0-9]/.test(val)) score++;
+  if(/[^A-Za-z0-9]/.test(val)) score++;
+  const labels = ['Too short','Weak','Fair','Good','Strong'];
+  const colours = ['#f87171','#f87171','#fbbf24','#34d399','#4ade80'];
+  bar.style.width = (score/4*100)+'%';
+  bar.style.background = colours[score];
+  hint.textContent = labels[score];
+  hint.style.color = colours[score];
+}
+
+function showError(id, show){ document.getElementById(id).style.display = show ? 'block' : 'none'; }
+function setLoading(btnId, loading){
+  const btn = document.getElementById(btnId);
+  btn.classList.toggle('loading', loading);
+}
+
+function validateEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+function showFormError(msg, field){
+  // Show a general error below the button
+  let el = document.getElementById('general-error');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'general-error';
+    el.style.cssText = 'font-size:13px;color:#f87171;text-align:center;margin-top:12px;padding:10px;background:rgba(248,113,113,0.08);border-radius:8px;border:1px solid rgba(248,113,113,0.2)';
+    document.querySelector('#form-signin .btn-submit, #form-signup .btn-submit').after(el);
+  }
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(()=>el.style.display='none', 5000);
+}
+
+async function handleSignIn(){
+  const email = document.getElementById('si-email').value.trim();
+  const pw = document.getElementById('si-password').value;
+  let valid = true;
+  if(!validateEmail(email)){
+    document.getElementById('si-email').classList.add('error');
+    showError('si-email-err', true); valid = false;
+  } else { document.getElementById('si-email').classList.remove('error'); showError('si-email-err', false); }
+  if(!pw){
+    document.getElementById('si-password').classList.add('error');
+    showError('si-pw-err', true); valid = false;
+  } else { document.getElementById('si-password').classList.remove('error'); showError('si-pw-err', false); }
+  if(!valid) return;
+  setLoading('si-btn', true);
+  const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
+  setLoading('si-btn', false);
+  if(error){
+    const msg = error.message.includes('Invalid') ? 'Incorrect email or password.' : error.message;
+    showFormError(msg);
+  } else {
+    window.location.href = 'volta-backtester.html';
+  }
+}
+
+async function handleSignUp(){
+  const name = document.getElementById('su-name').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const pw = document.getElementById('su-password').value;
+  let valid = true;
+  if(!name){ document.getElementById('su-name').classList.add('error'); showError('su-name-err', true); valid=false; }
+  else { document.getElementById('su-name').classList.remove('error'); showError('su-name-err', false); }
+  if(!validateEmail(email)){ document.getElementById('su-email').classList.add('error'); showError('su-email-err', true); valid=false; }
+  else { document.getElementById('su-email').classList.remove('error'); showError('su-email-err', false); }
+  if(pw.length < 8){ document.getElementById('su-password').classList.add('error'); showError('su-pw-err', true); valid=false; }
+  else { document.getElementById('su-password').classList.remove('error'); showError('su-pw-err', false); }
+  if(!valid) return;
+  setLoading('su-btn', true);
+  const { error } = await supabase.auth.signUp({
+    email, password: pw,
+    options: { data: { full_name: name } }
+  });
+  setLoading('su-btn', false);
+  if(error){
+    showFormError(error.message);
+  } else {
+    document.getElementById('signup-fields').style.display='none';
+    document.getElementById('signup-success').style.display='block';
+  }
+}
+
+async function handleGoogle(){
+  await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin+'/volta-backtester.html' }});
+}
+async function handleGithub(){
+  await supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin+'/volta-backtester.html' }});
+}
+
+// Enter key support
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    if(document.getElementById('form-signin').style.display !== 'none') handleSignIn();
+    else handleSignUp();
+  }
+});
+</script>
+</body>
+</html>
