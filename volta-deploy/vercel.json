@@ -1,7 +1,7 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/index.html" },
-    { "source": "/login", "destination": "/volta-auth.html" },
-    { "source": "/app", "destination": "/volta-backtester.html" }
+    { "source": "/", "destination": "/volta-deploy/index.html" },
+    { "source": "/login", "destination": "/volta-deploy/volta-auth.html" },
+    { "source": "/app", "destination": "/volta-deploy/volta-backtester.html" }
   ]
 }
